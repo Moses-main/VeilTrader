@@ -1,0 +1,38 @@
+{
+  "name": "veiltrader",
+  "version": "1.0.0",
+  "description": "Privacy-first autonomous AI trading agent on Base",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "nodemon src/index.js",
+    "test": "jest",
+    "deploy": "hardhat run scripts/deploy.js",
+    "analyze": "node scripts/analyze.js"
+  },
+  "keywords": [
+    "defi",
+    "trading",
+    "ai-agent",
+    "ethereum",
+    "base",
+    "uniswap",
+    "erc-8004",
+    "autonomous"
+  ],
+  "author": "Moses Sunday & Stealth",
+  "license": "MIT",
+  "dependencies": {
+    "ethers": "^6.9.0",
+    "dotenv": "^16.3.1",
+    "axios": "^1.6.2",
+    "winston": "^3.11.0",
+    "node-cron": "^3.0.3"
+  },
+  "devDependencies": {
+    "hardhat": "^2.19.0",
+    "@nomicfoundation/hardhat-toolbox": "^4.0.0",
+    "nodemon": "^3.0.2",
+    "jest": "^29.7.0"
+  }
+}
