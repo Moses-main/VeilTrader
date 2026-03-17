@@ -253,12 +253,17 @@ RISK_TOLERANCE=medium
 ### Deploy Smart Contract
 
 ```bash
-# Deploy to Base Sepolia
-npx hardhat run scripts/deploy.js --network baseSepolia
+# Install Foundry dependencies
+forge install foundry-rs/forge-std
+
+# Deploy to Base Sepolia (requires PRIVATE_KEY and AGENT_ID in .env)
+forge script script/Deploy.s.sol --rpc-url baseSepolia --broadcast --verify
 
 # Update .env with deployed contract address
-VEILTRADER_CONTRACT=<deployed_address>
+VEILTRADER_CONTRACT=0x44A8c4cabaE932445eBD1607238b0FEe6f480ff3
 ```
+
+**Deployed Contract:** [0x44A8c4cabaE932445eBD1607238b0FEe6f480ff3](https://base-sepolia.blockscout.com/address/0x44A8c4cabaE932445eBD1607238b0FEe6f480ff3)
 
 ### Run the Agent
 
@@ -296,18 +301,21 @@ veiltrader/
 │   │   └── logger.js            # Logging
 │   └── index.js                 # Entry point
 │
-├── 📁 contracts/                # Smart contracts
+├── 📁 contracts/                # Smart contracts (Foundry)
 │   └── VeilTrader.sol           # Trade history contract
 │
-├── 📁 scripts/                  # Deployment scripts
-│   └── deploy.js                # Contract deployment
+├── 📁 script/                   # Foundry deployment scripts
+│   └── Deploy.s.sol             # Contract deployment
+│
+├── 📁 test/                     # Foundry tests
+│   └── VeilTrader.t.sol          # Contract tests
 │
 ├── 📁 docs/                     # Additional documentation
 │   ├── ARCHITECTURE.md          # Detailed architecture
 │   ├── API.md                   # API reference
 │   └── SECURITY.md              # Security considerations
 │
-├── ⚙️ hardhat.config.js        # Hardhat configuration
+├── ⚙️ foundry.toml            # Foundry configuration
 ├── 📦 package.json              # Dependencies
 └── 🔒 .env                      # Environment variables
 ```

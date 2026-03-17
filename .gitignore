@@ -21,6 +21,10 @@ cache/
 typechain/
 typechain-types/
 
+# Foundry
+out/
+node_modules/
+
 # Coverage
 coverage/
 coverage.json

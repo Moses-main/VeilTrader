@@ -10,7 +10,7 @@ contract VeilTrader {
     
     struct Trade {
         bytes32 actionHash;
-        string actionType; // "BUY", "SELL", "HOLD"
+        string actionType;
         address tokenIn;
         address tokenOut;
         uint256 amountIn;
@@ -19,15 +19,12 @@ contract VeilTrader {
         string metadata;
     }
     
-    // Agent identity
     bytes32 public agentId;
     address public owner;
     
-    // Trade history
     Trade[] public trades;
     mapping(bytes32 => uint256) public tradeIndex;
     
-    // Events
     event TradeExecuted(
         bytes32 indexed actionHash,
         string actionType,
@@ -50,9 +47,6 @@ contract VeilTrader {
         owner = msg.sender;
     }
     
-    /**
-     * @notice Execute a trade and log to history
-     */
     function executeTrade(
         string memory _actionType,
         address _tokenIn,
@@ -97,39 +91,24 @@ contract VeilTrader {
         return actionHash;
     }
     
-    /**
-     * @notice Get trade by hash
-     */
     function getTrade(bytes32 _actionHash) external view returns (Trade memory) {
         uint256 index = tradeIndex[_actionHash];
         require(index < trades.length, "Trade not found");
         return trades[index];
     }
     
-    /**
-     * @notice Get all trades
-     */
     function getAllTrades() external view returns (Trade[] memory) {
         return trades;
     }
     
-    /**
-     * @notice Get trade count
-     */
     function getTradeCount() external view returns (uint256) {
         return trades.length;
     }
     
-    /**
-     * @notice Update agent metadata
-     */
     function updateIdentity(string memory _metadata) external onlyOwner {
         emit IdentityUpdated(agentId, _metadata);
     }
     
-    /**
-     * @notice Transfer ownership
-     */
     function transferOwnership(address _newOwner) external onlyOwner {
         require(_newOwner != address(0), "Invalid address");
         owner = _newOwner;
