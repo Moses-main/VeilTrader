@@ -11,6 +11,7 @@ class RiskEngine {
     this.maxSlippage = config.maxSlippage || 0.005; // 0.5%
     this.minProfitThreshold = config.minProfitThreshold || 0.01; // 1%
     this.riskTolerance = config.riskTolerance || 'medium';
+    this.minConfidence = config.minConfidence || null; // Override minConfidence if set
     
     // Risk thresholds by tolerance level
     this.thresholds = {
@@ -42,12 +43,13 @@ class RiskEngine {
     logger.info('⚖️ Evaluating risk...');
 
     const thresholds = this.thresholds[this.riskTolerance];
+    const minConfidence = this.minConfidence || thresholds.minConfidence;
     const risks = [];
     let approved = true;
 
     // Check confidence level
-    if (decision.confidence < thresholds.minConfidence) {
-      risks.push(`Confidence too low: ${decision.confidence} < ${thresholds.minConfidence}`);
+    if (decision.confidence < minConfidence) {
+      risks.push(`Confidence too low: ${decision.confidence} < ${minConfidence}`);
       approved = false;
     }
 

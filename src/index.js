@@ -36,6 +36,7 @@ async function main() {
       maxSlippage: process.env.MAX_SLIPPAGE,
       minProfitThreshold: process.env.MIN_PROFIT_THRESHOLD,
       riskTolerance: process.env.RISK_TOLERANCE,
+      minConfidence: process.env.MIN_CONFIDENCE,
       cycleInterval: process.env.CYCLE_INTERVAL,
       
       // Extension flags
