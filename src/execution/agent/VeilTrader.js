@@ -89,6 +89,9 @@ class VeilTrader {
     // Initialize VeilTrader contract interface
     await this.veilTraderContract.initialize();
 
+    // Initialize IdentityRegistry
+    await this.identityRegistry.initialize();
+
     // Register agent on-chain
     await this.identityRegistry.register();
     
