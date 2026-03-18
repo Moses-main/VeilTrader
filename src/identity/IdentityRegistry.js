@@ -8,17 +8,14 @@
 const { ethers } = require('ethers');
 const logger = require('../utils/logger');
 
-// ERC-8004 Interface
+// ERC-8004 IdentityRegistry Interface (Base Sepolia)
 const ERC8004_ABI = [
-  // Core identity functions
-  'function register(string memory name, string memory description, string memory image) external returns (bytes32 participantId)',
-  'function updateReputation(bytes32 participantId, bytes32 actionHash, string memory actionType, string memory metadata) external',
-  'function getReputation(bytes32 participantId) external view returns (uint256 score, uint256 actionCount)',
-  'function getActions(bytes32 participantId) external view returns (bytes32[] memory)',
-  
-  // Events
-  'event IdentityRegistered(bytes32 indexed participantId, address indexed owner, string name)',
-  'event ActionLogged(bytes32 indexed participantId, bytes32 indexed actionHash, string actionType, uint256 timestamp)'
+  'function register(string calldata metadataURI, string calldata domain) external returns (uint256 tokenId)',
+  'function tokenOfAgentByRegistration(string calldata agentIdentifier) external view returns (uint256)',
+  'function agentURI(uint256 tokenId) external view returns (string memory)',
+  'function setAgentURI(uint256 tokenId, string calldata metadataURI) external',
+  'function ownerOf(uint256 tokenId) external view returns (address)',
+  'function balanceOf(address owner) external view returns (uint256)'
 ];
 
 class IdentityRegistry {
@@ -26,7 +23,7 @@ class IdentityRegistry {
     this.provider = config.provider;
     this.wallet = config.wallet;
     this.agentId = config.agentId;
-    this.contractAddress = process.env.ERC8004_REGISTRY;
+    this.contractAddress = process.env.ERC8004_REGISTRY || '0x8004A818BFB912233c491871b3d84c89A494BD9e';
     this.contract = null;
     this.isRegistered = false;
   }
@@ -51,25 +48,24 @@ class IdentityRegistry {
     }
 
     try {
-      logger.info('⛓️ Registering agent on-chain...');
+      logger.info('⛓️ Registering agent on-chain with ERC-8004...');
       
-      const tx = await this.contract.register(
-        'Stealth',
-        'Privacy-first autonomous AI trading agent',
-        ''
-      );
+      const metadataURI = process.env.METADATA_URI || 'ipfs://QmExampleMetadataHash';
+      const domain = process.env.DOMAIN || 'veiltrader.xyz';
+      
+      const tx = await this.contract.register(metadataURI, domain);
       
       const receipt = await tx.wait();
-      logger.info(`✅ Agent registered: ${receipt.hash}`);
+      logger.info(`✅ Agent registered with ERC-8004: ${receipt.hash}`);
       this.isRegistered = true;
       
     } catch (error) {
       // Already registered is OK
-      if (error.message.includes('already registered')) {
-        logger.info('✅ Agent already registered');
+      if (error.message.includes('already registered') || error.message.includes('ERC721: token already minted')) {
+        logger.info('✅ Agent already registered with ERC-8004');
         this.isRegistered = true;
       } else {
-        logger.error('❌ Registration failed:', error.message);
+        logger.warn('⚠️ ERC-8004 registration skipped (optional):', error.message);
       }
     }
   }
@@ -80,8 +76,10 @@ class IdentityRegistry {
    * @param {Object} metadata - Action details
    */
   async logAction(actionType, metadata) {
-    if (!this.contract || !this.isRegistered) {
-      logger.warn('⚠️ Cannot log action: registry not available');
+    // Allow off-chain logging even if ERC-8004 registry is not available
+    // The VeilTrader contract handles on-chain logging
+    if (!this.contract) {
+      logger.info('📝 Logging action via VeilTrader contract instead of ERC-8004');
       return this.logActionOffChain(actionType, metadata);
     }
 
