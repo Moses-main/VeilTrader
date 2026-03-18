@@ -11,6 +11,7 @@ contract VeilTraderTest is Test {
     address internal other = address(0x789);
     
     bytes32 internal agentId = keccak256("test-agent");
+    bytes32 internal selfId = keccak256("self-id-123");
     
     // Event signatures
     event IdentityUpdated(bytes32 indexed agentId, string metadata);
@@ -53,6 +54,7 @@ contract VeilTraderTest is Test {
         string paymentId,
         string memo
     );
+    event SelfIdSet(bytes32 indexed selfId);
     
     function setUp() public {
         vm.prank(owner);
@@ -530,5 +532,23 @@ contract VeilTraderTest is Test {
     function testGetLocusAddress() public {
         // In our implementation, getLocusAddress returns the owner
         assertEq(veilTrader.getLocusAddress(), owner);
+    }
+    
+    // Self ID tests
+    function testSetSelfId() public {
+        vm.prank(owner);
+        
+        vm.expectEmit(true, true, true, true);
+        emit SelfIdSet(selfId);
+        
+        veilTrader.setSelfId(selfId);
+        
+        assertEq(veilTrader.selfId(), selfId);
+    }
+    
+    function testSetSelfIdNotOwner() public {
+        vm.prank(user);
+        vm.expectRevert("Not authorized");
+        veilTrader.setSelfId(selfId);
     }
 }
