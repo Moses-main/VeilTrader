@@ -84,7 +84,8 @@ class VeilTrader {
     this.riskEngine = new RiskEngine({
       maxSlippage: parseFloat(this.config.maxSlippage) || 0.005,
       minProfitThreshold: parseFloat(this.config.minProfitThreshold) || 0.01,
-      riskTolerance: this.config.riskTolerance || 'medium'
+      riskTolerance: this.config.riskTolerance || 'low', // More permissive for free tier
+      minConfidence: parseFloat(this.config.minConfidence) || 0.5 // Lower threshold for free tier
     });
 
     this.decisionEngine = new DecisionEngine({

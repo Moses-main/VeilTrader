@@ -1,0 +1,17 @@
+{
+  "name": "veiltrader-ui",
+  "version": "1.0.0",
+  "description": "VeilTrader Dashboard UI",
+  "main": "src/ui/server.js",
+  "scripts": {
+    "start": "node src/ui/server.js",
+    "dev": "nodemon src/ui/server.js"
+  },
+  "dependencies": {
+    "ethers": "^6.9.0",
+    "ws": "^8.14.2"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.2"
+  }
+}

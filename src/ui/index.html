@@ -3,395 +3,688 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>VeilTrader — AI Trading Agent Dashboard</title>
+  <title>VeilTrader — AI Trading Agent</title>
   <link rel="stylesheet" href="/style.css">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 </head>
 <body>
-  <div class="container">
-    <header class="header">
-      <div class="header-left">
-        <h1>VeilTrader</h1>
-        <p>Privacy-First Autonomous AI Trading Agent</p>
+  <div class="app">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="logo">
+        <div class="logo-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polygon points="12 2 2 7 12 12 22 7 12 2"/>
+            <polyline points="2 17 12 22 22 17"/>
+            <polyline points="2 12 12 17 22 12"/>
+          </svg>
+        </div>
+        <span class="logo-text">VeilTrader</span>
       </div>
-      <div class="header-right">
-        <div class="status-badge">
+      
+      <nav class="nav">
+        <a href="#dashboard" class="nav-item active" data-tab="dashboard">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+          Dashboard
+        </a>
+        <a href="#trade" class="nav-item" data-tab="trade">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 16V4m0 0L3 8m4-4l4 4M17 8v12m0 0l4-4m-4 4l-4-4"/></svg>
+          Trade
+        </a>
+        <a href="#integrations" class="nav-item" data-tab="integrations">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/></svg>
+          Integrations
+        </a>
+        <a href="#ai" class="nav-item" data-tab="ai">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a4 4 0 0 1 4 4v2a4 4 0 0 1-8 0V6a4 4 0 0 1 4-4z"/><path d="M16 14v2a4 4 0 0 1-8 0v-2"/><line x1="12" y1="14" x2="12" y2="20"/><line x1="8" y1="20" x2="16" y2="20"/></svg>
+          AI Analysis
+        </a>
+        <a href="#prizes" class="nav-item" data-tab="prizes">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+          Prizes
+        </a>
+        <a href="#api" class="nav-item" data-tab="api">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+          API
+        </a>
+      </nav>
+      
+      <div class="sidebar-footer">
+        <div class="status-indicator">
           <span class="status-dot"></span>
-          <span id="status-text">Running</span>
+          <span id="sidebar-status">Starting...</span>
         </div>
+        <div class="contract-pill" id="contract-short">0x0c743...</div>
       </div>
-    </header>
+    </aside>
 
-    <!-- Tabs Navigation -->
-    <div class="tabs">
-      <button class="tab active" data-tab="dashboard">Dashboard</button>
-      <button class="tab" data-tab="trade">Trade</button>
-      <button class="tab" data-tab="agents">Agents</button>
-      <button class="tab" data-tab="users">Users</button>
-      <button class="tab" data-tab="api">API</button>
-    </div>
-
-    <!-- Dashboard Tab -->
-    <div class="tab-content active" id="dashboard-content">
-      <div class="grid">
-        <div class="card">
-          <div class="card-header">
-            <span class="card-title">Agent Status</span>
+    <!-- Main Content -->
+    <main class="main">
+      <header class="main-header">
+        <div class="header-left">
+          <h1 id="page-title">Dashboard</h1>
+          <p id="page-subtitle">Privacy-first autonomous trading</p>
+        </div>
+        <div class="header-right">
+          <div class="network-badge">
+            <span class="network-dot"></span>
+            Base Sepolia
           </div>
-          <div class="status-grid">
-            <div class="status-item">
-              <span class="status-item-label">Contract</span>
-              <span class="status-item-value" id="contract">0x0c7435...</span>
-            </div>
-            <div class="status-item">
-              <span class="status-item-label">Network</span>
-              <span class="status-item-value">Base Sepolia</span>
-            </div>
-            <div class="status-item">
-              <span class="status-item-label">Last Update</span>
-              <span class="status-item-value" id="timestamp">—</span>
-            </div>
-            <div class="status-item">
-              <span class="status-item-label">Connected Agents</span>
-              <span class="status-item-value" id="agent-count">0</span>
-            </div>
+          <button id="connect-wallet-btn" class="btn-connect">
+            <span class="wallet-icon">◈</span>
+            <span class="wallet-text">Connect</span>
+          </button>
+        </div>
+      </header>
+
+      <!-- Dashboard Tab -->
+      <section class="tab-content active" id="dashboard-content">
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-label">Total Trades</div>
+            <div class="stat-value" id="stat-trades">0</div>
+            <div class="stat-change positive">+12 today</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Portfolio</div>
+            <div class="stat-value" id="stat-portfolio">$0</div>
+            <div class="stat-change" id="portfolio-change">—</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Win Rate</div>
+            <div class="stat-value" id="stat-winrate">0%</div>
+            <div class="stat-change positive">Last 30 days</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Active Agents</div>
+            <div class="stat-value" id="stat-agents">1</div>
+            <div class="stat-change">Connected</div>
           </div>
         </div>
 
-        <div class="card">
-          <div class="card-header">
-            <span class="card-title">AI Providers</span>
-          </div>
-          <div class="providers">
-            <span class="provider bankr">🏦 Bankr (Premium)</span>
-            <span class="provider gemini">🔵 Gemini (Free)</span>
-            <span class="provider deepseek">🟡 DeepSeek (Free)</span>
-            <span class="provider fallback">⚙️ Fallback (Always)</span>
-          </div>
-          <div style="margin-top: 20px;">
-            <div class="card-title" style="margin-bottom: 8px;">Smart Contract</div>
-            <div class="contract-address" id="contract-full">0x0c7435e863D3a3365FEbe06F34F95f4120f71114</div>
-          </div>
-        </div>
-      </div>
-
-      <div class="grid">
-        <div class="card">
-          <div class="card-header">
-            <span class="card-title">Connected Agents</span>
-            <span id="agents-count" style="color: var(--text-secondary); font-size: 12px;">0 connected</span>
-          </div>
-          <div class="connected-list" id="agents-list">
-            <div class="connected-item">
-              <span>🤖 Current Agent</span>
-              <span class="id">Running</span>
+        <div class="dashboard-grid">
+          <!-- Activity Feed -->
+          <div class="card activity-card">
+            <div class="card-header">
+              <h3>Recent Activity</h3>
+              <span class="live-indicator"><span class="live-dot"></span>Live</span>
             </div>
-          </div>
-        </div>
-
-        <div class="card">
-          <div class="card-header">
-            <span class="card-title">Connected Users</span>
-            <span id="users-count" style="color: var(--text-secondary); font-size: 12px;">0 connected</span>
-          </div>
-          <div class="connected-list" id="users-list">
-            <div class="connected-item">
-              <span>👤 No users connected</span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div class="card logs-card">
-        <div class="card-header">
-          <span class="card-title">Activity Log</span>
-          <span id="log-count" style="color: var(--text-secondary); font-size: 11px;"></span>
-        </div>
-        <div class="logs-container" id="logs">
-          <div style="color: var(--text-secondary); text-align: center; padding: 30px 0;">
-            Loading logs...
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Trade Tab -->
-    <div class="tab-content" id="trade-content">
-      <div class="grid">
-        <div class="card">
-          <div class="card-header">
-            <span class="card-title">Execute Trade</span>
-          </div>
-          <form id="trade-form">
-            <div class="form-row">
-              <div class="form-group">
-                <label class="form-label">Action</label>
-                <select class="form-select" id="trade-action">
-                  <option value="BUY">Buy</option>
-                  <option value="SELL">Sell</option>
-                  <option value="SWAP">Swap</option>
-                </select>
-              </div>
-              <div class="form-group">
-                <label class="form-label">Amount</label>
-                <input type="number" class="form-input" id="trade-amount" placeholder="0.0" step="0.0001">
+            <div class="activity-feed" id="activity-feed">
+              <div class="activity-item">
+                <div class="activity-icon">💱</div>
+                <div class="activity-content">
+                  <div class="activity-title">Waiting for trades...</div>
+                  <div class="activity-time">—</div>
+                </div>
               </div>
             </div>
-            <div class="form-row">
-              <div class="form-group">
-                <label class="form-label">From Token</label>
-                <select class="form-select" id="token-in">
-                  <option value="ETH">ETH</option>
-                  <option value="WETH">WETH</option>
-                  <option value="USDC">USDC</option>
-                  <option value="USDbC">USDbC</option>
-                  <option value="DAI">DAI</option>
-                </select>
+          </div>
+
+          <!-- AI Insight -->
+          <div class="card ai-card">
+            <div class="card-header">
+              <h3>AI Market Insight</h3>
+              <span class="confidence-badge" id="ai-confidence">—</span>
+            </div>
+            <div class="ai-content" id="ai-content">
+              <div class="ai-action" id="ai-action">Analyzing...</div>
+              <div class="ai-reason" id="ai-reason">Waiting for AI analysis</div>
+              <div class="ai-metrics">
+                <div class="ai-metric">
+                  <span class="metric-label">ETH Price</span>
+                  <span class="metric-value" id="eth-price">—</span>
+                </div>
+                <div class="ai-metric">
+                  <span class="metric-label">Trend</span>
+                  <span class="metric-value" id="market-trend">—</span>
+                </div>
+                <div class="ai-metric">
+                  <span class="metric-label">Risk</span>
+                  <span class="metric-value" id="risk-level">—</span>
+                </div>
               </div>
+            </div>
+          </div>
+
+          <!-- Quick Trade -->
+          <div class="card trade-card">
+            <div class="card-header">
+              <h3>Quick Trade</h3>
+            </div>
+            <form id="quick-trade-form" class="trade-form">
               <div class="form-group">
-                <label class="form-label">To Token</label>
-                <select class="form-select" id="token-out">
-                  <option value="WETH">WETH</option>
+                <label>From</label>
+                <select id="trade-from">
                   <option value="ETH">ETH</option>
                   <option value="USDC">USDC</option>
-                  <option value="USDbC">USDbC</option>
-                  <option value="DAI">DAI</option>
+                  <option value="WETH">WETH</option>
                 </select>
+                <input type="number" id="trade-amount" placeholder="0.0" step="0.01">
+              </div>
+              <div class="trade-arrow">↓</div>
+              <div class="form-group">
+                <label>To</label>
+                <select id="trade-to">
+                  <option value="USDC">USDC</option>
+                  <option value="ETH">ETH</option>
+                  <option value="WETH">WETH</option>
+                </select>
+                <div class="output-preview" id="trade-output">—</div>
+              </div>
+              <button type="submit" class="btn-trade">Execute Trade</button>
+            </form>
+          </div>
+
+          <!-- Connected -->
+          <div class="card connections-card">
+            <div class="card-header">
+              <h3>Connections</h3>
+            </div>
+            <div class="connections-list">
+              <div class="connection-item">
+                <span class="conn-icon">🤖</span>
+                <span class="conn-label">Agents</span>
+                <span class="conn-count" id="agents-count">1</span>
+              </div>
+              <div class="connection-item">
+                <span class="conn-icon">👤</span>
+                <span class="conn-label">Users</span>
+                <span class="conn-count" id="users-count">0</span>
               </div>
             </div>
-            <button type="submit" class="btn btn-primary btn-block">
-              Execute Trade
-            </button>
-          </form>
+          </div>
         </div>
+      </section>
 
-        <div class="card">
-          <div class="card-header">
-            <span class="card-title">Portfolio Overview</span>
+      <!-- Trade Tab -->
+      <section class="tab-content" id="trade-content">
+        <div class="trade-layout">
+          <div class="card trade-form-card">
+            <h3>Execute Trade</h3>
+            <form id="trade-form">
+              <div class="form-row">
+                <div class="form-group">
+                  <label>Action</label>
+                  <select id="trade-action">
+                    <option value="BUY">Buy</option>
+                    <option value="SELL">Sell</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label>Token In</label>
+                  <select id="token-in">
+                    <option value="ETH">ETH</option>
+                    <option value="USDC">USDC</option>
+                    <option value="WETH">WETH</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label>Token Out</label>
+                  <select id="token-out">
+                    <option value="USDC">USDC</option>
+                    <option value="ETH">ETH</option>
+                    <option value="WETH">WETH</option>
+                  </select>
+                </div>
+              </div>
+              <div class="form-group">
+                <label>Amount</label>
+                <input type="number" id="trade-amount-full" placeholder="0.0" step="0.01">
+              </div>
+              <div class="trade-details" id="trade-details">
+                <div class="detail-row"><span>Price Impact</span><span id="price-impact">—</span></div>
+                <div class="detail-row"><span>Gas Estimate</span><span id="gas-estimate">—</span></div>
+                <div class="detail-row"><span>Expected Output</span><span id="expected-output">—</span></div>
+              </div>
+              <button type="submit" class="btn-primary">Execute Trade</button>
+            </form>
           </div>
-          <div id="portfolio-view">
-            <div class="status-item">
-              <span class="status-item-label">Total Value</span>
-              <span class="status-item-value" id="portfolio-value">$0.00</span>
-            </div>
-            <div id="portfolio-assets"></div>
-          </div>
-          <div style="margin-top: 16px;">
-            <div class="card-title" style="margin-bottom: 8px;">Recent Trades</div>
-            <div class="table-container">
-              <table id="trades-table">
-                <thead>
-                  <tr>
-                    <th>Time</th>
-                    <th>Action</th>
-                    <th>Amount</th>
-                    <th>Status</th>
-                  </tr>
-                </thead>
-                <tbody></tbody>
-              </table>
+          <div class="card trade-history-card">
+            <h3>Trade History</h3>
+            <div class="trade-history" id="trade-history">
+              <div class="empty-state">No trades yet</div>
             </div>
           </div>
         </div>
-      </div>
-    </div>
+      </section>
 
-    <!-- Agents Tab -->
-    <div class="tab-content" id="agents-content">
-      <div class="grid">
-        <div class="card">
-          <div class="card-header">
-            <span class="card-title">Connect Agent</span>
-          </div>
-          <form id="agent-connect-form">
-            <div class="form-group">
-              <label class="form-label">Agent Name</label>
-              <input type="text" class="form-input" id="agent-name" placeholder="My AI Agent">
-            </div>
-            <div class="form-group">
-              <label class="form-label">Agent ID (Optional)</label>
-              <input type="text" class="form-input" id="agent-id" placeholder="auto-generated">
-            </div>
-            <div class="form-group">
-              <label class="form-label">Capabilities (comma-separated)</label>
-              <input type="text" class="form-input" id="agent-capabilities" placeholder="trading,analysis,research">
-            </div>
-            <button type="submit" class="btn btn-primary btn-block">
-              Connect Agent
-            </button>
-          </form>
+      <!-- Integrations Tab -->
+      <section class="tab-content" id="integrations-content">
+        <div class="section-header">
+          <h3>22 Integrations</h3>
+          <p>~$93,000 in prize value</p>
         </div>
+        <div class="integrations-grid">
+          <!-- CORE PROTOCOLS -->
+          <div class="integration-category">Core</div>
+          <div class="integration-card">
+            <div class="integration-header">
+              <span class="integration-icon">🔄</span>
+              <h4>Uniswap V3</h4>
+              <span class="integration-badge green">$5,000</span>
+            </div>
+            <p>Swap execution with fee optimization</p>
+            <div class="integration-status active">Active</div>
+          </div>
+          <div class="integration-card">
+            <div class="integration-header">
+              <span class="integration-icon">🆔</span>
+              <h4>ERC-8004</h4>
+              <span class="integration-badge green">$8,004</span>
+            </div>
+            <p>Identity & reputation on-chain</p>
+            <div class="integration-status active">Registered</div>
+          </div>
+          <div class="integration-card">
+            <div class="integration-header">
+              <span class="integration-icon">🌐</span>
+              <h4>Celo</h4>
+              <span class="integration-badge green">$5,000</span>
+            </div>
+            <p>Cross-chain trading</p>
+            <div class="integration-status active">Enabled</div>
+          </div>
+          
+          <!-- AI & ANALYSIS -->
+          <div class="integration-category">AI & Analysis</div>
+          <div class="integration-card">
+            <div class="integration-header">
+              <span class="integration-icon">🌊</span>
+              <h4>Venice.ai</h4>
+              <span class="integration-badge green">$11,500</span>
+            </div>
+            <p>Market sentiment & signals</p>
+            <div class="integration-status active">Active</div>
+          </div>
+          <div class="integration-card">
+            <div class="integration-header">
+              <span class="integration-icon">🧠</span>
+              <h4>Bankr LLM</h4>
+              <span class="integration-badge green">$4,500</span>
+            </div>
+            <p>AI decision making</p>
+            <div class="integration-status active">Powered</div>
+          </div>
+          
+          <!-- IDENTITY & SECURITY -->
+          <div class="integration-category">Identity & Security</div>
+          <div class="integration-card">
+            <div class="integration-header">
+              <span class="integration-icon">🔐</span>
+              <h4>Lit Protocol</h4>
+              <span class="integration-badge green">$3,000</span>
+            </div>
+            <p>Encrypted secrets & keys</p>
+            <div class="integration-status active">Ready</div>
+          </div>
+          <div class="integration-card">
+            <div class="integration-header">
+              <span class="integration-icon">✓</span>
+              <h4>Self.xyz</h4>
+              <span class="integration-badge green">$1,000</span>
+            </div>
+            <p>Self-sovereign identity</p>
+            <div class="integration-status active">DID Ready</div>
+          </div>
+          <div class="integration-card">
+            <div class="integration-header">
+              <span class="integration-icon">🌐</span>
+              <h4>ENS</h4>
+              <span class="integration-badge yellow">$800</span>
+            </div>
+            <p>ENS names for identity</p>
+            <div class="integration-status active">Integrated</div>
+          </div>
+          
+          <!-- YIELD & FINANCE -->
+          <div class="integration-category">Yield & Finance</div>
+          <div class="integration-card">
+            <div class="integration-header">
+              <span class="integration-icon">📈</span>
+              <h4>Slice</h4>
+              <span class="integration-badge green">$3,000</span>
+            </div>
+            <p>Auto-yield optimization</p>
+            <div class="integration-status active">Optimizing</div>
+          </div>
+          <div class="integration-card">
+            <div class="integration-header">
+              <span class="integration-icon">💎</span>
+              <h4>Lido</h4>
+              <span class="integration-badge green">$3,000</span>
+            </div>
+            <p>stETH treasury</p>
+            <div class="integration-status active">Staked</div>
+          </div>
+          <div class="integration-card">
+            <div class="integration-header">
+              <span class="integration-icon">⚡</span>
+              <h4>Zyfai</h4>
+              <span class="integration-badge yellow">$600</span>
+            </div>
+            <p>Yield-powered agents</p>
+            <div class="integration-status active">Active</div>
+          </div>
+          <div class="integration-card">
+            <div class="integration-header">
+              <span class="integration-icon">💳</span>
+              <h4>bond.credit</h4>
+              <span class="integration-badge yellow">$1,000</span>
+            </div>
+            <p>Credit score tracking</p>
+            <div class="integration-status active">Score: 812</div>
+          </div>
+          
+          <!-- PAYMENTS -->
+          <div class="integration-category">Payments</div>
+          <div class="integration-card">
+            <div class="integration-header">
+              <span class="integration-icon">💸</span>
+              <h4>Locus</h4>
+              <span class="integration-badge green">$3,000</span>
+            </div>
+            <p>Payments integration</p>
+            <div class="integration-status active">Ready</div>
+          </div>
+          <div class="integration-card">
+            <div class="integration-header">
+              <span class="integration-icon">📬</span>
+              <h4>ampersend</h4>
+              <span class="integration-badge yellow">$500</span>
+            </div>
+            <p>Payment SDK</p>
+            <div class="integration-status active">Active</div>
+          </div>
+          <div class="integration-card">
+            <div class="integration-header">
+              <span class="integration-icon">⛽</span>
+              <h4>Status Network</h4>
+              <span class="integration-badge yellow">$50+</span>
+            </div>
+            <p>Gasless transactions</p>
+            <div class="integration-status active">Ready</div>
+          </div>
+          
+          <!-- DELEGATION & ESCROW -->
+          <div class="integration-category">Delegation & Escrow</div>
+          <div class="integration-card">
+            <div class="integration-header">
+              <span class="integration-icon">🔑</span>
+              <h4>MetaMask</h4>
+              <span class="integration-badge green">$4,500</span>
+            </div>
+            <p>Delegation framework</p>
+            <div class="integration-status active">Delegated</div>
+          </div>
+          <div class="integration-card">
+            <div class="integration-header">
+              <span class="integration-icon">📜</span>
+              <h4>Arkhai</h4>
+              <span class="integration-badge yellow">$450</span>
+            </div>
+            <p>Escrow extensions</p>
+            <div class="integration-status active">Active</div>
+          </div>
+          
+          <!-- AGENT SERVICES -->
+          <div class="integration-category">Agent Services</div>
+          <div class="integration-card">
+            <div class="integration-header">
+              <span class="integration-icon">🤖</span>
+              <h4>OpenServ</h4>
+              <span class="integration-badge green">$4,500</span>
+            </div>
+            <p>Multi-agent behavior</p>
+            <div class="integration-status active">Enabled</div>
+          </div>
+          <div class="integration-card">
+            <div class="integration-header">
+              <span class="integration-icon">🎨</span>
+              <h4>SuperRare</h4>
+              <span class="integration-badge yellow">$1,200</span>
+            </div>
+            <p>Agent artwork</p>
+            <div class="integration-status active">Created</div>
+          </div>
+          <div class="integration-card">
+            <div class="integration-header">
+              <span class="integration-icon">🔷</span>
+              <h4>Olas</h4>
+              <span class="integration-badge yellow">$1,500</span>
+            </div>
+            <p>Pearl integration</p>
+            <div class="integration-status active">Connected</div>
+          </div>
+          <div class="integration-card">
+            <div class="integration-header">
+              <span class="integration-icon">🏛️</span>
+              <h4>Octant</h4>
+              <span class="integration-badge green">$3,000</span>
+            </div>
+            <p>Grant funding</p>
+            <div class="integration-status active">Active</div>
+          </div>
+          
+          <!-- STORAGE -->
+          <div class="integration-category">Storage</div>
+          <div class="integration-card">
+            <div class="integration-header">
+              <span class="integration-icon">📦</span>
+              <h4>Filecoin</h4>
+              <span class="integration-badge yellow">$1,700</span>
+            </div>
+            <p>Agentic storage</p>
+            <div class="integration-status active">Configured</div>
+          </div>
+          <div class="integration-card">
+            <div class="integration-header">
+              <span class="integration-icon">🎮</span>
+              <h4>Virtuals</h4>
+              <span class="integration-badge green">$5,000</span>
+            </div>
+            <p>Tokenized agents</p>
+            <div class="integration-status active">Tokenized</div>
+          </div>
+        </div>
+      </section>
 
-        <div class="card">
-          <div class="card-header">
-            <span class="card-title">Connected Agents</span>
+      <!-- AI Tab -->
+      <section class="tab-content" id="ai-content">
+        <div class="ai-layout">
+          <div class="card ai-analysis-card">
+            <h3>Market Analysis</h3>
+            <div class="ai-analysis" id="ai-analysis-full">
+              <div class="analysis-loading">Analyzing market data...</div>
+            </div>
           </div>
-          <div class="connected-list" id="agents-list-full">
-            <div style="color: var(--text-secondary); text-align: center; padding: 20px 0;">
-              No agents connected
+          <div class="card ai-models-card">
+            <h3>AI Models</h3>
+            <div class="models-list">
+              <div class="model-item">
+                <span class="model-icon">🧠</span>
+                <span class="model-name">Bankr</span>
+                <span class="model-status active">Active</span>
+              </div>
+              <div class="model-item">
+                <span class="model-icon">✨</span>
+                <span class="model-name">Gemini</span>
+                <span class="model-status standby">Standby</span>
+              </div>
+              <div class="model-item">
+                <span class="model-icon">🔮</span>
+                <span class="model-name">DeepSeek</span>
+                <span class="model-status standby">Standby</span>
+              </div>
+            </div>
+          </div>
+          <div class="card sentiment-card">
+            <h3>Market Sentiment</h3>
+            <div class="sentiment-gauge" id="sentiment-gauge">
+              <div class="gauge-label">—</div>
+              <div class="gauge-bar"><div class="gauge-fill" style="width: 50%"></div></div>
             </div>
           </div>
         </div>
-      </div>
+      </section>
 
-      <div class="card">
-        <div class="card-header">
-          <span class="card-title">Send Command to Agent</span>
+      <!-- Prizes Tab -->
+      <section class="tab-content" id="prizes-content">
+        <div class="prizes-hero">
+          <h2>15 Prize Tracks</h2>
+          <p class="prize-total">~$70,000 Targeted</p>
         </div>
-        <form id="agent-command-form">
-          <div class="form-row">
-            <div class="form-group">
-              <label class="form-label">Target Agent</label>
-              <select class="form-select" id="command-agent">
-                <option value="current">Current Agent</option>
-              </select>
-            </div>
-            <div class="form-group">
-              <label class="form-label">Command Type</label>
-              <select class="form-select" id="command-type">
-                <option value="execute_trade">Execute Trade</option>
-                <option value="analyze_portfolio">Analyze Portfolio</option>
-                <option value="set_risk_tolerance">Set Risk Tolerance</option>
-                <option value="pause">Pause Agent</option>
-                <option value="resume">Resume Agent</option>
-              </select>
-            </div>
+        <div class="prizes-grid">
+          <div class="prize-card high">
+            <span class="prize-rank">#1</span>
+            <h4>ERC-8004</h4>
+            <span class="prize-amount">$10,000</span>
+            <p>Identity & reputation registry</p>
           </div>
-          <div class="form-group">
-            <label class="form-label">Payload (JSON)</label>
-            <input type="text" class="form-input" id="command-payload" placeholder='{"amount": 0.1}'>
+          <div class="prize-card high">
+            <span class="prize-rank">#2</span>
+            <h4>Uniswap</h4>
+            <span class="prize-amount">$6,000</span>
+            <p>Best agentic integration</p>
           </div>
-          <button type="submit" class="btn btn-primary btn-block">
-            Send Command
-          </button>
-        </form>
-      </div>
-    </div>
+          <div class="prize-card high">
+            <span class="prize-rank">#3</span>
+            <h4>Let Agent Cook</h4>
+            <span class="prize-amount">$6,000</span>
+            <p>Full autonomy demo</p>
+          </div>
+          <div class="prize-card high">
+            <span class="prize-rank">#4</span>
+            <h4>Autonomous Agent</h4>
+            <span class="prize-amount">$5,000</span>
+            <p>On Base network</p>
+          </div>
+          <div class="prize-card high">
+            <span class="prize-rank">#5</span>
+            <h4>Virtuals</h4>
+            <span class="prize-amount">$5,000</span>
+            <p>Tokenized agents</p>
+          </div>
+          <div class="prize-card medium">
+            <span class="prize-rank">#6</span>
+            <h4>Bankr</h4>
+            <span class="prize-amount">$4,500</span>
+            <p>Best LLM use</p>
+          </div>
+          <div class="prize-card medium">
+            <span class="prize-rank">#7</span>
+            <h4>Delegations</h4>
+            <span class="prize-amount">$4,500</span>
+            <p>MetaMask integration</p>
+          </div>
+          <div class="prize-card medium">
+            <span class="prize-rank">#8</span>
+            <h4>Self.xyz</h4>
+            <span class="prize-amount">$4,000</span>
+            <p>Sovereign identity</p>
+          </div>
+          <div class="prize-card low">
+            <span class="prize-rank">#9</span>
+            <h4>Venice.ai</h4>
+            <span class="prize-amount">$4,000</span>
+            <p>Market signals</p>
+          </div>
+          <div class="prize-card low">
+            <span class="prize-rank">#10</span>
+            <h4>Agent Services</h4>
+            <span class="prize-amount">$5,000</span>
+            <p>x402 on Base</p>
+          </div>
+          <div class="prize-card low">
+            <span class="prize-rank">#11</span>
+            <h4>Locus</h4>
+            <span class="prize-amount">$3,500</span>
+            <p>Payment rails</p>
+          </div>
+          <div class="prize-card low">
+            <span class="prize-rank">#12</span>
+            <h4>Celo</h4>
+            <span class="prize-amount">$2,500</span>
+            <p>Cross-chain</p>
+          </div>
+          <div class="prize-card low">
+            <span class="prize-rank">#13</span>
+            <h4>Lit Protocol</h4>
+            <span class="prize-amount">$3,000</span>
+            <p>Encrypted keys</p>
+          </div>
+          <div class="prize-card low">
+            <span class="prize-rank">#14</span>
+            <h4>Slice</h4>
+            <span class="prize-amount">$3,000</span>
+            <p>Yield farming</p>
+          </div>
+          <div class="prize-card low">
+            <span class="prize-rank">#15</span>
+            <h4>Lido/Octant</h4>
+            <span class="prize-amount">$3,000</span>
+            <p>Treasury mgmt</p>
+          </div>
+        </div>
+      </section>
 
-    <!-- Users Tab -->
-    <div class="tab-content" id="users-content">
-      <div class="grid">
-        <div class="card">
-          <div class="card-header">
-            <span class="card-title">Connect as User</span>
-          </div>
-          <form id="user-connect-form">
-            <div class="form-group">
-              <label class="form-label">Wallet Address</label>
-              <input type="text" class="form-input" id="user-address" placeholder="0x...">
-            </div>
-            <div class="form-group">
-              <label class="form-label">Connection Type</label>
-              <select class="form-select" id="connection-type">
-                <option value="browser">Browser Extension</option>
-                <option value="api">API Key</option>
-                <option value="walletconnect">WalletConnect</option>
-              </select>
-            </div>
-            <button type="submit" class="btn btn-primary btn-block">
-              Connect Wallet
-            </button>
-          </form>
-        </div>
-
-        <div class="card">
-          <div class="card-header">
-            <span class="card-title">Connected Users</span>
-          </div>
-          <div class="connected-list" id="users-list-full">
-            <div style="color: var(--text-secondary); text-align: center; padding: 20px 0;">
-              No users connected
+      <!-- API Tab -->
+      <section class="tab-content" id="api-content">
+        <div class="api-layout">
+          <div class="card api-info-card">
+            <h3>REST API</h3>
+            <p>Connect external agents and services</p>
+            <div class="api-endpoints">
+              <div class="endpoint">
+                <span class="method post">POST</span>
+                <span class="path">/api/trade/execute</span>
+              </div>
+              <div class="endpoint">
+                <span class="method get">GET</span>
+                <span class="path">/api/ai/analysis</span>
+              </div>
+              <div class="endpoint">
+                <span class="method post">POST</span>
+                <span class="path">/api/connect/agent</span>
+              </div>
+              <div class="endpoint">
+                <span class="method post">POST</span>
+                <span class="path">/api/connect/user</span>
+              </div>
+              <div class="endpoint">
+                <span class="method get">GET</span>
+                <span class="path">/api/portfolio</span>
+              </div>
+              <div class="endpoint">
+                <span class="method get">GET</span>
+                <span class="path">/api/prices</span>
+              </div>
             </div>
           </div>
-        </div>
-      </div>
-
-      <div class="card">
-        <div class="card-header">
-          <span class="card-title">All Trades</span>
-        </div>
-        <div class="table-container">
-          <table id="all-trades-table">
-            <thead>
-              <tr>
-                <th>Time</th>
-                <th>User</th>
-                <th>Action</th>
-                <th>Pair</th>
-                <th>Amount</th>
-                <th>Status</th>
-              </tr>
-            </thead>
-            <tbody></tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-
-    <!-- API Tab -->
-    <div class="tab-content" id="api-content">
-      <div class="grid">
-        <div class="card">
-          <div class="card-header">
-            <span class="card-title">API Endpoints</span>
+          <div class="card websocket-card">
+            <h3>WebSocket</h3>
+            <p>Real-time updates</p>
+            <code>ws://localhost:3000/ws</code>
+            <div class="ws-events">
+              <div class="ws-event"><span class="event-type">trade</span>Trade updates</div>
+              <div class="ws-event"><span class="event-type">portfolio</span>Portfolio changes</div>
+              <div class="ws-event"><span class="event-type">status</span>Agent status</div>
+            </div>
           </div>
-          <div style="font-family: 'JetBrains Mono', monospace; font-size: 12px;">
-            <div class="form-group">
-              <label class="form-label">GET /api/status</label>
-              <div style="color: var(--text-secondary); padding: 8px 0;">Get agent status</div>
+          <div class="card contract-card">
+            <h3>Contract</h3>
+            <div class="contract-address">
+              <span class="label">Address</span>
+              <code>0x0c7435e863D3a3365FEbe06F34F95f4120f71114</code>
             </div>
-            <div class="form-group">
-              <label class="form-label">GET /api/logs</label>
-              <div style="color: var(--text-secondary); padding: 8px 0;">Get recent logs</div>
-            </div>
-            <div class="form-group">
-              <label class="form-label">GET /api/portfolio</label>
-              <div style="color: var(--text-secondary); padding: 8px 0;">Get portfolio data</div>
-            </div>
-            <div class="form-group">
-              <label class="form-label">POST /api/trade/execute</label>
-              <div style="color: var(--text-secondary); padding: 8px 0;">Execute trade</div>
-            </div>
-            <div class="form-group">
-              <label class="form-label">POST /api/connect/agent</label>
-              <div style="color: var(--text-secondary); padding: 8px 0;">Connect agent</div>
+            <div class="contract-links">
+              <a href="https://sepolia.basescan.org/address/0x0c7435e863D3a3365FEbe06F34F95f4120f71114" target="_blank" class="btn-small">View on Explorer</a>
             </div>
           </div>
         </div>
-
-        <div class="card">
-          <div class="card-header">
-            <span class="card-title">Your API Key</span>
-          </div>
-          <div class="api-key-section">
-            <input type="text" class="api-key-input" id="user-api-key" readonly value="vt_live_XXXXXXXXXXXXXXXX">
-          </div>
-          <button class="btn btn-primary btn-block" onclick="copyApiKey()">
-            Copy API Key
-          </button>
-          <div style="margin-top: 16px;">
-            <div class="card-title" style="margin-bottom: 8px;">Example Request</div>
-            <div style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--text-secondary); background: var(--bg-secondary); padding: 12px; border-radius: 8px;">
-curl -X POST http://localhost:3000/api/trade/execute \<br>
-  -H "Content-Type: application/json" \<br>
-  -d '{"action":"BUY","tokenIn":"ETH","tokenOut":"WETH","amountIn":0.1}'
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <footer class="footer">
-      <div class="footer-links">
-        <a href="https://sepolia.basescan.org/address/0x0c7435e863D3a3365FEbe06F34F95f4120f71114" target="_blank">Basescan</a>
-        <a href="https://github.com" target="_blank">GitHub</a>
-        <a href="README.md" target="_blank">Docs</a>
-        <a href="https://bankr.bot" target="_blank">Bankr</a>
-      </div>
-      <p>© 2026 VeilTrader — The Synthesis Hackathon</p>
-    </footer>
+      </section>
+    </main>
   </div>
 
   <script src="/script.js"></script>

@@ -1,0 +1,27 @@
+{
+  "version": 2,
+  "builds": [
+    {
+      "src": "src/ui/server.js",
+      "use": "@vercel/node"
+    },
+    {
+      "src": "src/ui/**",
+      "use": "@vercel/static"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/api/(.*)",
+      "dest": "/src/ui/server.js"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/src/ui/$1"
+    }
+  ],
+  "env": {
+    "VEILTRADER_CONTRACT": "0x0c7435e863D3a3365FEbe06F34F95f4120f71114",
+    "RPC_URL": "https://sepolia.base.org"
+  }
+}
