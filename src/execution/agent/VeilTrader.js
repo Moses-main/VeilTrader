@@ -248,8 +248,9 @@ class VeilTrader {
         await this.runCycle();
         
         // Wait before next cycle (configurable, default 5 minutes)
-        const waitTime = (this.config.cycleInterval || 5) * 60 * 1000;
-        logger.info(`⏳ Waiting ${this.config.cycleInterval || 5} minutes before next cycle...`);
+        // NOTE: For free tier APIs, increase cycle interval to avoid rate limits
+        const waitTime = (this.config.cycleInterval || 15) * 60 * 1000;
+        logger.info(`⏳ Waiting ${this.config.cycleInterval || 15} minutes before next cycle...`);
         await this.sleep(waitTime);
         
       } catch (error) {
