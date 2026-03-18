@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VeilTrader — AI Trading Agent Dashboard</title>
+  <link rel="stylesheet" href="/style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div class="container">
+    <header class="header">
+      <div class="header-left">
+        <h1>VeilTrader</h1>
+        <p>Privacy-First Autonomous AI Trading Agent</p>
+      </div>
+      <div class="header-right">
+        <div class="status-badge">
+          <span class="status-dot"></span>
+          <span id="status-text">Running</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- Tabs Navigation -->
+    <div class="tabs">
+      <button class="tab active" data-tab="dashboard">Dashboard</button>
+      <button class="tab" data-tab="trade">Trade</button>
+      <button class="tab" data-tab="agents">Agents</button>
+      <button class="tab" data-tab="users">Users</button>
+      <button class="tab" data-tab="api">API</button>
+    </div>
+
+    <!-- Dashboard Tab -->
+    <div class="tab-content active" id="dashboard-content">
+      <div class="grid">
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title">Agent Status</span>
+          </div>
+          <div class="status-grid">
+            <div class="status-item">
+              <span class="status-item-label">Contract</span>
+              <span class="status-item-value" id="contract">0x0c7435...</span>
+            </div>
+            <div class="status-item">
+              <span class="status-item-label">Network</span>
+              <span class="status-item-value">Base Sepolia</span>
+            </div>
+            <div class="status-item">
+              <span class="status-item-label">Last Update</span>
+              <span class="status-item-value" id="timestamp">—</span>
+            </div>
+            <div class="status-item">
+              <span class="status-item-label">Connected Agents</span>
+              <span class="status-item-value" id="agent-count">0</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title">AI Providers</span>
+          </div>
+          <div class="providers">
+            <span class="provider bankr">🏦 Bankr (Premium)</span>
+            <span class="provider gemini">🔵 Gemini (Free)</span>
+            <span class="provider deepseek">🟡 DeepSeek (Free)</span>
+            <span class="provider fallback">⚙️ Fallback (Always)</span>
+          </div>
+          <div style="margin-top: 20px;">
+            <div class="card-title" style="margin-bottom: 8px;">Smart Contract</div>
+            <div class="contract-address" id="contract-full">0x0c7435e863D3a3365FEbe06F34F95f4120f71114</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="grid">
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title">Connected Agents</span>
+            <span id="agents-count" style="color: var(--text-secondary); font-size: 12px;">0 connected</span>
+          </div>
+          <div class="connected-list" id="agents-list">
+            <div class="connected-item">
+              <span>🤖 Current Agent</span>
+              <span class="id">Running</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title">Connected Users</span>
+            <span id="users-count" style="color: var(--text-secondary); font-size: 12px;">0 connected</span>
+          </div>
+          <div class="connected-list" id="users-list">
+            <div class="connected-item">
+              <span>👤 No users connected</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card logs-card">
+        <div class="card-header">
+          <span class="card-title">Activity Log</span>
+          <span id="log-count" style="color: var(--text-secondary); font-size: 11px;"></span>
+        </div>
+        <div class="logs-container" id="logs">
+          <div style="color: var(--text-secondary); text-align: center; padding: 30px 0;">
+            Loading logs...
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Trade Tab -->
+    <div class="tab-content" id="trade-content">
+      <div class="grid">
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title">Execute Trade</span>
+          </div>
+          <form id="trade-form">
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label">Action</label>
+                <select class="form-select" id="trade-action">
+                  <option value="BUY">Buy</option>
+                  <option value="SELL">Sell</option>
+                  <option value="SWAP">Swap</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Amount</label>
+                <input type="number" class="form-input" id="trade-amount" placeholder="0.0" step="0.0001">
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label">From Token</label>
+                <select class="form-select" id="token-in">
+                  <option value="ETH">ETH</option>
+                  <option value="WETH">WETH</option>
+                  <option value="USDC">USDC</option>
+                  <option value="USDbC">USDbC</option>
+                  <option value="DAI">DAI</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label class="form-label">To Token</label>
+                <select class="form-select" id="token-out">
+                  <option value="WETH">WETH</option>
+                  <option value="ETH">ETH</option>
+                  <option value="USDC">USDC</option>
+                  <option value="USDbC">USDbC</option>
+                  <option value="DAI">DAI</option>
+                </select>
+              </div>
+            </div>
+            <button type="submit" class="btn btn-primary btn-block">
+              Execute Trade
+            </button>
+          </form>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title">Portfolio Overview</span>
+          </div>
+          <div id="portfolio-view">
+            <div class="status-item">
+              <span class="status-item-label">Total Value</span>
+              <span class="status-item-value" id="portfolio-value">$0.00</span>
+            </div>
+            <div id="portfolio-assets"></div>
+          </div>
+          <div style="margin-top: 16px;">
+            <div class="card-title" style="margin-bottom: 8px;">Recent Trades</div>
+            <div class="table-container">
+              <table id="trades-table">
+                <thead>
+                  <tr>
+                    <th>Time</th>
+                    <th>Action</th>
+                    <th>Amount</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Agents Tab -->
+    <div class="tab-content" id="agents-content">
+      <div class="grid">
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title">Connect Agent</span>
+          </div>
+          <form id="agent-connect-form">
+            <div class="form-group">
+              <label class="form-label">Agent Name</label>
+              <input type="text" class="form-input" id="agent-name" placeholder="My AI Agent">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Agent ID (Optional)</label>
+              <input type="text" class="form-input" id="agent-id" placeholder="auto-generated">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Capabilities (comma-separated)</label>
+              <input type="text" class="form-input" id="agent-capabilities" placeholder="trading,analysis,research">
+            </div>
+            <button type="submit" class="btn btn-primary btn-block">
+              Connect Agent
+            </button>
+          </form>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title">Connected Agents</span>
+          </div>
+          <div class="connected-list" id="agents-list-full">
+            <div style="color: var(--text-secondary); text-align: center; padding: 20px 0;">
+              No agents connected
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">Send Command to Agent</span>
+        </div>
+        <form id="agent-command-form">
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Target Agent</label>
+              <select class="form-select" id="command-agent">
+                <option value="current">Current Agent</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Command Type</label>
+              <select class="form-select" id="command-type">
+                <option value="execute_trade">Execute Trade</option>
+                <option value="analyze_portfolio">Analyze Portfolio</option>
+                <option value="set_risk_tolerance">Set Risk Tolerance</option>
+                <option value="pause">Pause Agent</option>
+                <option value="resume">Resume Agent</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Payload (JSON)</label>
+            <input type="text" class="form-input" id="command-payload" placeholder='{"amount": 0.1}'>
+          </div>
+          <button type="submit" class="btn btn-primary btn-block">
+            Send Command
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <!-- Users Tab -->
+    <div class="tab-content" id="users-content">
+      <div class="grid">
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title">Connect as User</span>
+          </div>
+          <form id="user-connect-form">
+            <div class="form-group">
+              <label class="form-label">Wallet Address</label>
+              <input type="text" class="form-input" id="user-address" placeholder="0x...">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Connection Type</label>
+              <select class="form-select" id="connection-type">
+                <option value="browser">Browser Extension</option>
+                <option value="api">API Key</option>
+                <option value="walletconnect">WalletConnect</option>
+              </select>
+            </div>
+            <button type="submit" class="btn btn-primary btn-block">
+              Connect Wallet
+            </button>
+          </form>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title">Connected Users</span>
+          </div>
+          <div class="connected-list" id="users-list-full">
+            <div style="color: var(--text-secondary); text-align: center; padding: 20px 0;">
+              No users connected
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">All Trades</span>
+        </div>
+        <div class="table-container">
+          <table id="all-trades-table">
+            <thead>
+              <tr>
+                <th>Time</th>
+                <th>User</th>
+                <th>Action</th>
+                <th>Pair</th>
+                <th>Amount</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- API Tab -->
+    <div class="tab-content" id="api-content">
+      <div class="grid">
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title">API Endpoints</span>
+          </div>
+          <div style="font-family: 'JetBrains Mono', monospace; font-size: 12px;">
+            <div class="form-group">
+              <label class="form-label">GET /api/status</label>
+              <div style="color: var(--text-secondary); padding: 8px 0;">Get agent status</div>
+            </div>
+            <div class="form-group">
+              <label class="form-label">GET /api/logs</label>
+              <div style="color: var(--text-secondary); padding: 8px 0;">Get recent logs</div>
+            </div>
+            <div class="form-group">
+              <label class="form-label">GET /api/portfolio</label>
+              <div style="color: var(--text-secondary); padding: 8px 0;">Get portfolio data</div>
+            </div>
+            <div class="form-group">
+              <label class="form-label">POST /api/trade/execute</label>
+              <div style="color: var(--text-secondary); padding: 8px 0;">Execute trade</div>
+            </div>
+            <div class="form-group">
+              <label class="form-label">POST /api/connect/agent</label>
+              <div style="color: var(--text-secondary); padding: 8px 0;">Connect agent</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title">Your API Key</span>
+          </div>
+          <div class="api-key-section">
+            <input type="text" class="api-key-input" id="user-api-key" readonly value="vt_live_XXXXXXXXXXXXXXXX">
+          </div>
+          <button class="btn btn-primary btn-block" onclick="copyApiKey()">
+            Copy API Key
+          </button>
+          <div style="margin-top: 16px;">
+            <div class="card-title" style="margin-bottom: 8px;">Example Request</div>
+            <div style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--text-secondary); background: var(--bg-secondary); padding: 12px; border-radius: 8px;">
+curl -X POST http://localhost:3000/api/trade/execute \<br>
+  -H "Content-Type: application/json" \<br>
+  -d '{"action":"BUY","tokenIn":"ETH","tokenOut":"WETH","amountIn":0.1}'
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <footer class="footer">
+      <div class="footer-links">
+        <a href="https://sepolia.basescan.org/address/0x0c7435e863D3a3365FEbe06F34F95f4120f71114" target="_blank">Basescan</a>
+        <a href="https://github.com" target="_blank">GitHub</a>
+        <a href="README.md" target="_blank">Docs</a>
+        <a href="https://bankr.bot" target="_blank">Bankr</a>
+      </div>
+      <p>© 2026 VeilTrader — The Synthesis Hackathon</p>
+    </footer>
+  </div>
+
+  <script src="/script.js"></script>
+</body>
+</html>

@@ -1,229 +1,258 @@
 /**
- * VeilTrader Web UI Server
- * Simple HTTP server for viewing agent status and logs
+ * VeilTrader Extended Web UI Server
+ * Features for users and agents to connect and trade
  */
 
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
-const { exec } = require('child_process');
 
 const PORT = 3000;
-const LOG_DIR = path.join(__dirname, 'logs');
+
+// In-memory store for connected agents and users
+const connectedAgents = new Map();
+const connectedUsers = new Map();
+const tradeHistory = [];
 
 const server = http.createServer((req, res) => {
   const url = req.url;
-  
+  const method = req.method;
+
+  // CORS headers
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+
+  if (method === 'OPTIONS') {
+    res.writeHead(200);
+    res.end();
+    return;
+  }
+
+  // Serve static files
   if (url === '/' || url === '/index.html') {
     res.writeHead(200, { 'Content-Type': 'text/html' });
-    res.end(getHomePage());
-  } else if (url === '/api/status') {
-    res.writeHead(200, { 'Content-Type': 'application/json' });
-    res.end(JSON.stringify({
-      status: 'running',
-      contract: process.env.VEILTRADER_CONTRACT || '0x0c7435e863D3a3365FEbe06F34F95f4120f71114',
-      network: 'Base Sepolia',
-      timestamp: new Date().toISOString()
-    }));
-  } else if (url === '/api/logs') {
-    res.writeHead(200, { 'Content-Type': 'application/json' });
-    try {
-      const logs = fs.readFileSync(path.join(LOG_DIR, 'combined.log'), 'utf8')
-        .split('\n')
-        .filter(l => l)
-        .slice(-50)
-        .map(l => {
-          try {
-            return JSON.parse(l);
-          } catch (e) {
-            return { message: l };
-          }
-        });
-      res.end(JSON.stringify(logs));
-    } catch (e) {
-      res.end(JSON.stringify({ error: 'No logs found' }));
-    }
-  } else {
-    res.writeHead(404);
-    res.end('Not Found');
+    res.end(fs.readFileSync(path.join(process.cwd(), 'src/ui/index.html'), 'utf8'));
+    return;
   }
+
+  if (url === '/style.css') {
+    res.writeHead(200, { 'Content-Type': 'text/css' });
+    res.end(fs.readFileSync(path.join(process.cwd(), 'src/ui/style.css'), 'utf8'));
+    return;
+  }
+
+  if (url === '/script.js') {
+    res.writeHead(200, { 'Content-Type': 'application/javascript' });
+    res.end(fs.readFileSync(path.join(process.cwd(), 'src/ui/script.js'), 'utf8'));
+    return;
+  }
+
+  // API Endpoints
+  if (url.startsWith('/api/')) {
+    handleAPI(req, res, url, method);
+    return;
+  }
+
+  res.writeHead(404);
+  res.end('Not Found');
 });
+
+function handleAPI(req, res, url, method) {
+  const body = [];
+
+  req.on('data', chunk => body.push(chunk));
+  req.on('end', () => {
+    const data = body.length ? JSON.parse(Buffer.concat(body).toString()) : {};
+
+    // GET endpoints
+    if (method === 'GET') {
+      if (url === '/api/status') {
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({
+          status: 'running',
+          contract: process.env.VEILTRADER_CONTRACT || '0x0c7435e863D3a3365FEbe06F34F95f4120f71114',
+          network: 'Base Sepolia',
+          timestamp: new Date().toISOString(),
+          connectedAgents: connectedAgents.size,
+          connectedUsers: connectedUsers.size
+        }));
+        return;
+      }
+
+      if (url === '/api/logs') {
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        try {
+          const logsPath = path.join(process.cwd(), 'logs', 'combined.log');
+          const logs = fs.readFileSync(logsPath, 'utf8')
+            .split('\n')
+            .filter(l => l)
+            .slice(-30)
+            .map(l => {
+              try { return JSON.parse(l); } catch(e) { return { message: l }; }
+            });
+          res.end(JSON.stringify(logs));
+        } catch (e) {
+          res.end(JSON.stringify({ error: e.message }));
+        }
+        return;
+      }
+
+      if (url === '/api/agents') {
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify([...connectedAgents.entries()].map(([id, agent]) => ({
+          id, 
+          name: agent.name, 
+          connectedAt: agent.connectedAt,
+          lastSeen: agent.lastSeen
+        }))));
+        return;
+      }
+
+      if (url === '/api/users') {
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify([...connectedUsers.entries()].map(([id, user]) => ({
+          id,
+          address: user.address,
+          connectedAt: user.connectedAt,
+          trades: user.trades || 0
+        }))));
+        return;
+      }
+
+      if (url === '/api/trades') {
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify(tradeHistory.slice(-50)));
+        return;
+      }
+
+      if (url === '/api/portfolio') {
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({
+          totalValue: 974.86,
+          assets: [
+            { symbol: 'ETH', balance: 0.2, value: 600 },
+            { symbol: 'WETH', balance: 0.12, value: 374.86 }
+          ]
+        }));
+        return;
+      }
+    }
+
+    // POST endpoints
+    if (method === 'POST') {
+      if (url === '/api/connect/agent') {
+        const agentId = data.id || `agent-${Date.now()}`;
+        connectedAgents.set(agentId, {
+          id: agentId,
+          name: data.name || 'Unknown Agent',
+          connectedAt: new Date().toISOString(),
+          lastSeen: new Date().toISOString(),
+          capabilities: data.capabilities || []
+        });
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ agentId, status: 'connected' }));
+        return;
+      }
+
+      if (url === '/api/connect/user') {
+        const userId = data.address || `user-${Date.now()}`;
+        connectedUsers.set(userId, {
+          id: userId,
+          address: data.address,
+          connectedAt: new Date().toISOString(),
+          lastSeen: new Date().toISOString(),
+          trades: 0
+        });
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ userId, status: 'connected' }));
+        return;
+      }
+
+      if (url === '/api/trade/execute') {
+        const trade = {
+          id: `trade-${Date.now()}`,
+          user: data.user || 'anonymous',
+          action: data.action,
+          tokenIn: data.tokenIn,
+          tokenOut: data.tokenOut,
+          amountIn: data.amountIn,
+          amountOut: data.amountOut,
+          timestamp: new Date().toISOString(),
+          status: 'pending'
+        };
+        tradeHistory.push(trade);
+
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ tradeId: trade.id, status: 'submitted' }));
+        return;
+      }
+
+      if (url === '/api/agent/command') {
+        const command = {
+          id: `cmd-${Date.now()}`,
+          agent: data.agentId,
+          type: data.type,
+          payload: data.payload,
+          timestamp: new Date().toISOString(),
+          status: 'queued'
+        };
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ commandId: command.id, status: 'queued' }));
+        return;
+      }
+    }
+
+    // PUT endpoints (update)
+    if (method === 'PUT') {
+      if (url.startsWith('/api/agents/')) {
+        const agentId = url.split('/')[3];
+        if (connectedAgents.has(agentId)) {
+          const agent = connectedAgents.get(agentId);
+          agent.lastSeen = new Date().toISOString();
+          res.writeHead(200, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ status: 'updated' }));
+          return;
+        }
+      }
+
+      if (url.startsWith('/api/users/')) {
+        const userId = url.split('/')[3];
+        if (connectedUsers.has(userId)) {
+          const user = connectedUsers.get(userId);
+          user.lastSeen = new Date().toISOString();
+          res.writeHead(200, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ status: 'updated' }));
+          return;
+        }
+      }
+    }
+
+    // DELETE endpoints
+    if (method === 'DELETE') {
+      if (url.startsWith('/api/agents/')) {
+        const agentId = url.split('/')[3];
+        connectedAgents.delete(agentId);
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ status: 'disconnected' }));
+        return;
+      }
+
+      if (url.startsWith('/api/users/')) {
+        const userId = url.split('/')[3];
+        connectedUsers.delete(userId);
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ status: 'disconnected' }));
+        return;
+      }
+    }
+
+    res.writeHead(404, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ error: 'Not found' }));
+  });
+}
 
 server.listen(PORT, () => {
-  console.log(`🌐 VeilTrader Web UI running at http://localhost:${PORT}`);
+  console.log(`🌐 VeilTrader Dashboard: http://localhost:${PORT}`);
+  console.log(`🔗 API available at: http://localhost:${PORT}/api/`);
 });
-
-function getHomePage() {
-  const contract = process.env.VEILTRADER_CONTRACT || '0x0c7435e863D3a3365FEbe06F34F95f4120f71114';
-  return `
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>VeilTrader - AI Trading Agent</title>
-    <style>
-        body {
-            font-family: 'Segoe UI', sans-serif;
-            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
-            color: #fff;
-            margin: 0;
-            padding: 20px;
-            min-height: 100vh;
-        }
-        .header {
-            text-align: center;
-            margin-bottom: 30px;
-        }
-        .header h1 {
-            font-size: 2.5em;
-            background: linear-gradient(90deg, #667eea, #764ba2);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-        .header p {
-            color: #888;
-            margin-top: -10px;
-        }
-        .container {
-            max-width: 1000px;
-            margin: 0 auto;
-        }
-        .status-card {
-            background: rgba(255,255,255,0.05);
-            border-radius: 15px;
-            padding: 20px;
-            margin-bottom: 20px;
-            border: 1px solid rgba(102, 126, 234, 0.3);
-        }
-        .status-row {
-            display: flex;
-            justify-content: space-between;
-            margin: 10px 0;
-            padding: 10px 0;
-            border-bottom: 1px solid rgba(255,255,255,0.1);
-        }
-        .status-label { color: #888; }
-        .status-value { color: #00d4aa; font-weight: bold; }
-        .status-value.running { color: #00ff88; }
-        .status-value.paused { color: #ffaa00; }
-        .logs-container {
-            background: rgba(0,0,0,0.3);
-            border-radius: 10px;
-            padding: 15px;
-            font-family: 'Courier New', monospace;
-            font-size: 12px;
-            max-height: 300px;
-            overflow-y: auto;
-        }
-        .log-entry {
-            margin: 5px 0;
-            padding: 5px;
-            border-radius: 3px;
-        }
-        .log-info { color: #88ccff; }
-        .log-warn { color: #ffaa00; }
-        .log-error { color: #ff5555; }
-        .log-success { color: #55ff88; }
-        .badges {
-            display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
-            margin: 15px 0;
-        }
-        .badge {
-            background: rgba(102, 126, 234, 0.3);
-            padding: 5px 15px;
-            border-radius: 20px;
-            font-size: 12px;
-        }
-        .badge.bankr { background: rgba(255, 100, 100, 0.3); }
-        .badge.gemini { background: rgba(66, 133, 244, 0.3); }
-        .badge.deepseek { background: rgba(255, 200, 100, 0.3); }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <div class="header">
-            <h1>🤖 VeilTrader</h1>
-            <p>Privacy-First Autonomous AI Trading Agent on Base</p>
-        </div>
-
-        <div class="status-card">
-            <h3>📊 Agent Status</h3>
-            <div class="status-row">
-                <span class="status-label">Status</span>
-                <span class="status-value running">● Running</span>
-            </div>
-            <div class="status-row">
-                <span class="status-label">Contract</span>
-                <span class="status-value">${contract.slice(0, 10)}...${contract.slice(-8)}</span>
-            </div>
-            <div class="status-row">
-                <span class="status-label">Network</span>
-                <span class="status-value">Base Sepolia</span>
-            </div>
-            <div class="status-row">
-                <span class="status-label">Last Update</span>
-                <span class="status-value" id="timestamp">Loading...</span>
-            </div>
-            
-            <div class="badges">
-                <span class="badge bankr">Bankr (Premium)</span>
-                <span class="badge gemini">Gemini (Free)</span>
-                <span class="badge deepseek">DeepSeek (Free)</span>
-            </div>
-        </div>
-
-        <div class="status-card">
-            <h3>📜 Recent Activity</h3>
-            <div class="logs-container" id="logs">
-                <div style="color: #666;">Loading logs...</div>
-            </div>
-        </div>
-
-        <div class="status-card">
-            <h3>🔗 Quick Links</h3>
-            <div class="status-row">
-                <span class="status-label">Contract on Basescan</span>
-                <a href="https://sepolia.basescan.org/address/${contract}" target="_blank" style="color: #667eea;">View →</a>
-            </div>
-            <div class="status-row">
-                <span class="status-label">GitHub Repository</span>
-                <a href="https://github.com/veiltrader/veiltrader" target="_blank" style="color: #667eea;">View →</a>
-            </div>
-            <div class="status-row">
-                <span class="status-label">Documentation</span>
-                <a href="README.md" target="_blank" style="color: #667eea;">View →</a>
-            </div>
-        </div>
-
-        <p style="text-align: center; color: #555; margin-top: 30px;">
-            © 2026 VeilTrader | Built for The Synthesis Hackathon
-        </p>
-    </div>
-
-    <script>
-        async function refresh() {
-            try {
-                const res = await fetch('/api/logs');
-                const logs = await res.json();
-                const container = document.getElementById('logs');
-                container.innerHTML = logs.map(l => {
-                    const level = l.level || 'info';
-                    const msg = l.message || l;
-                    return '<div class="log-entry log-' + level + '">' + msg + '</div>';
-                }).join('');
-                document.getElementById('timestamp').textContent = new Date().toLocaleTimeString();
-            } catch (e) {
-                console.error('Error loading logs:', e);
-            }
-        }
-        refresh();
-        setInterval(refresh, 5000);
-    </script>
-</body>
-</html>
-  `;
-}
