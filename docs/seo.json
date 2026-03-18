@@ -1,0 +1,26 @@
+{
+  "name": "VeilTrader",
+  "title": "VeilTrader - Privacy-First Autonomous AI Trading Agent",
+  "description": "VeilTrader is a fully autonomous, privacy-first AI trading agent that operates on Base network. It uses Bankr LLM for AI analysis, executes real Uniswap V3 swaps, and maintains on-chain identity via ERC-8004.",
+  "keywords": [
+    "AI agent",
+    "autonomous trading",
+    "DeFi",
+    "Base",
+    "Uniswap V3",
+    "ERC-8004",
+    "privacy-first",
+    "blockchain",
+    "trading bot",
+    "artificial intelligence"
+  ],
+  "image": "./public/VeilTrader_with_text.png",
+  "favicon": "./public/favicon.svg",
+  "url": "https://github.com/veiltrader/veiltrader",
+  "contract_address": "0x0c7435e863D3a3365FEbe06F34F95f4120f71114",
+  "chain": "Base Sepolia (84532)",
+  "social": {
+    "twitter": "@Techboy1999",
+    "github": "veiltrader"
+  }
+}

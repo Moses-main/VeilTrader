@@ -1,5 +1,9 @@
 # VeilTrader 🤖💰
 
+<p align="center">
+  <img src="public/VeilTrader_with_text.png" alt="VeilTrader Logo" width="400"/>
+</p>
+
 > **Privacy-first autonomous AI trading agent on Base**
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
@@ -876,6 +880,21 @@ Need help? Check out [SUPPORT.md](SUPPORT.md) for troubleshooting and contact in
 **Built for The Synthesis Hackathon 2026** 🚀
 
 ---
+
+<p align="center">
+  <img src="public/VeilTrader_with_text.png" alt="VeilTrader" width="200"/>
+</p>
+
+<p align="center">
+  <a href="https://basescan.org/address/0x0c7435e863D3a3365FEbe06F34F95f4120f71114">
+    <img src="https://img.shields.io/badge/Contract-0x0c7435...-blue" alt="Contract">
+  </a>
+  <a href="https://sepolia.basescan.org/address/0x0c7435e863D3a3365FEbe06F34F95f4120f71114">
+    <img src="https://img.shields.io/badge/Basescan-Verified-green" alt="Verified">
+  </a>
+  <img src="https://img.shields.io/badge/ERC--8004-Compliant-brightgreen" alt="ERC-8004">
+  <img src="https://img.shields.io/badge/Tests-29%2F29%20Passing-success" alt="Tests">
+</p>
 
 <p align="center">
   <sub>Privacy-first • Autonomous • On-chain Verifiable</sub>
