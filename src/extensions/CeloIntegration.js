@@ -13,8 +13,8 @@ class CeloIntegration {
   constructor(config) {
     this.wallet = config.wallet;
     
-    // Celo Alfajores (testnet)
-    this.celoRpcUrl = config.celoRpcUrl || 'https://alfajores-forno.celo-testnet.org';
+    // Celo Sepolia (testnet) - use Alchemy
+    this.celoRpcUrl = config.celoRpcUrl || 'https://celo-sepolia.g.alchemy.com/v2/YOUR_API_KEY';
     this.celoChainId = 44787;
     
     // Celo mainnet

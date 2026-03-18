@@ -1,8 +1,8 @@
 /**
- * Bankr LLM Gateway Integration
+ * Bankr Gateway
  * 
- * Provides privacy-preserving LLM inference for portfolio analysis
- * Agent pays for its own inference costs
+ * Privacy-preserving LLM inference via Bankr
+ * https://llm.bankr.bot
  */
 
 const axios = require('axios');
@@ -11,7 +11,7 @@ const logger = require('../utils/logger');
 class BankrGateway {
   constructor(config) {
     this.apiKey = config.apiKey;
-    this.baseUrl = 'https://api.bankr.bot';
+    this.baseUrl = 'https://llm.bankr.bot';
   }
 
   /**
@@ -26,9 +26,9 @@ class BankrGateway {
 
     try {
       const response = await axios.post(
-        `${this.baseUrl}/v1/inference`,
+        `${this.baseUrl}/v1/chat/completions`,
         {
-          model: 'claude-sonnet-4-6',
+          model: 'claude-sonnet-4.6',
           messages: [
             {
               role: 'system',
@@ -44,7 +44,7 @@ class BankrGateway {
         },
         {
           headers: {
-            'Authorization': `Bearer ${this.apiKey}`,
+            'X-API-Key': this.apiKey,
             'Content-Type': 'application/json'
           }
         }
