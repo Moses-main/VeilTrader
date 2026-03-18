@@ -9,14 +9,14 @@
  */
 
 const { ethers } = require('ethers');
-const PortfolioAnalyzer = require('../analysis/PortfolioAnalyzer');
-const RiskEngine = require('../analysis/RiskEngine');
-const DecisionEngine = require('../analysis/DecisionEngine');
-const UniswapExecutor = require('../execution/UniswapExecutor');
-const VeilTraderContract = require('../execution/VeilTraderContract');
-const IdentityRegistry = require('../identity/IdentityRegistry');
-const BankrGateway = require('../services/BankrGateway');
-const logger = require('../utils/logger');
+const PortfolioAnalyzer = require('../../analysis/PortfolioAnalyzer');
+const RiskEngine = require('../../analysis/RiskEngine');
+const DecisionEngine = require('../../analysis/DecisionEngine');
+const UniswapExecutor = require('../UniswapExecutor');
+const VeilTraderContract = require('../VeilTraderContract');
+const IdentityRegistry = require('../../identity/IdentityRegistry');
+const BankrGateway = require('../../services/BankrGateway');
+const logger = require('../../utils/logger');
 
 class VeilTrader {
   constructor(config) {
@@ -38,8 +38,11 @@ class VeilTrader {
   async initialize() {
     logger.info('🔧 Initializing VeilTrader components...');
 
-    // Setup blockchain connection
-    this.provider = new ethers.JsonRpcProvider(this.config.rpcUrl);
+    // Setup blockchain connection - use Base Sepolia chain ID
+    this.provider = new ethers.JsonRpcProvider(this.config.rpcUrl, {
+      chainId: 84532,
+      name: 'base-sepolia'
+    });
     this.wallet = new ethers.Wallet(this.config.privateKey, this.provider);
     
     const address = await this.wallet.getAddress();

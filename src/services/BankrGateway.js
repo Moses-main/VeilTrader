@@ -55,9 +55,23 @@ class BankrGateway {
       return analysis;
 
     } catch (error) {
-      logger.error('❌ Bankr Gateway error:', error.message);
-      throw error;
+      logger.warn('⚠️ Bankr Gateway unavailable, using fallback analysis');
+      return this.getFallbackAnalysis(portfolio);
     }
+  }
+
+  /**
+   * Fallback analysis when Bankr is unavailable
+   */
+  getFallbackAnalysis(portfolio) {
+    logger.info('📊 Using fallback analysis based on portfolio state');
+    return {
+      sentiment: 'neutral',
+      recommendation: 'HOLD',
+      confidence: 0.5,
+      reasoning: 'Bankr Gateway unavailable - using conservative fallback',
+      riskLevel: 'medium'
+    };
   }
 
   /**
