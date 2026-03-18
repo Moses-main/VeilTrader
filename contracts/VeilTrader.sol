@@ -429,4 +429,80 @@ contract VeilTrader {
             delegations[owner][delegate].totalSpent += value;
         }
     }
+
+    // ========== Locus Integration ==========
+    // Locus is a protocol for agent-native payments
+    // For this implementation, we'll simulate the core concepts
+    
+    event LocusPaymentReceived(
+        address indexed from,
+        uint256 amount,
+        string paymentId,
+        string memo
+    );
+
+    event LocusPaymentSent(
+        address indexed to,
+        uint256 amount,
+        string paymentId,
+        string memo
+    );
+
+    /**
+     * @notice Receive a payment via Locus
+     * @dev In a real implementation, this would interact with the Locus protocol
+     * @param from The address sending the payment
+     * @param amount The amount received in wei
+     * @param paymentId Unique identifier for this payment
+     * @param memo Optional memo for the payment
+     */
+    function receiveLocusPayment(
+        address from,
+        uint256 amount,
+        string calldata paymentId,
+        string calldata memo
+    ) external onlyOwner {
+        require(amount > 0, "Amount must be greater than zero");
+        require(bytes(paymentId).length > 0, "Payment ID required");
+        
+        emit LocusPaymentReceived(from, amount, paymentId, memo);
+        
+        // In a real implementation, we would update internal accounting
+        // For now, we just emit the event
+    }
+
+    /**
+     * @notice Send a payment via Locus
+     * @dev In a real implementation, this would interact with the Locus protocol
+     * @param to The address to send payment to
+     * @param amount The amount to send in wei
+     * @param paymentId Unique identifier for this payment
+     * @param memo Optional memo for the payment
+     */
+    function sendLocusPayment(
+        address to,
+        uint256 amount,
+        string calldata paymentId,
+        string calldata memo
+    ) external onlyOwner {
+        require(to != address(0), "Cannot send to zero address");
+        require(amount > 0, "Amount must be greater than zero");
+        require(bytes(paymentId).length > 0, "Payment ID required");
+        
+        emit LocusPaymentSent(to, amount, paymentId, memo);
+        
+        // In a real implementation, we would deduct from balance and interact with Locus
+        // For now, we just emit the event
+    }
+
+    /**
+     * @notice Get the agent's Locus address (if applicable)
+     * @dev Returns the address used for Locus transactions
+     * @return locusAddress The Locus address for this agent
+     */
+    function getLocusAddress() external view returns (address) {
+        // In a real implementation, this might return a specific Locus address
+        // For now, we return the owner address as the Locus address
+        return owner;
+    }
 }

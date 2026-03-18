@@ -8,6 +8,7 @@ contract VeilTraderTest is Test {
     VeilTrader public veilTrader;
     address internal owner = address(0x123);
     address internal user = address(0x456);
+    address internal other = address(0x789);
     
     bytes32 internal agentId = keccak256("test-agent");
     
@@ -29,6 +30,28 @@ contract VeilTraderTest is Test {
         uint8 decimals,
         string tag1,
         string tag2
+    );
+    event DelegationGranted(
+        address indexed delegator,
+        address indexed delegate,
+        uint256 maxValuePerTx,
+        uint256 maxTotalValue
+    );
+    event DelegationRevoked(
+        address indexed delegator,
+        address indexed delegate
+    );
+    event LocusPaymentReceived(
+        address indexed from,
+        uint256 amount,
+        string paymentId,
+        string memo
+    );
+    event LocusPaymentSent(
+        address indexed to,
+        uint256 amount,
+        string paymentId,
+        string memo
     );
     
     function setUp() public {
@@ -475,5 +498,37 @@ contract VeilTraderTest is Test {
             2 ether,
             "unauthorized trade"
         );
+    }
+    
+    // Locus tests
+    function testReceiveLocusPayment() public {
+        vm.prank(owner);
+        address payer = address(0x111);
+        uint256 amount = 0.1 ether;
+        string memory paymentId = "payment-123";
+        string memory memo = "Test payment";
+        
+        vm.expectEmit(true, true, false, false);
+        emit LocusPaymentReceived(payer, amount, paymentId, memo);
+        
+        veilTrader.receiveLocusPayment(payer, amount, paymentId, memo);
+    }
+    
+    function testSendLocusPayment() public {
+        vm.prank(owner);
+        address payee = address(0x222);
+        uint256 amount = 0.05 ether;
+        string memory paymentId = "payment-456";
+        string memory memo = "Test send";
+        
+        vm.expectEmit(true, false, true, false);
+        emit LocusPaymentSent(payee, amount, paymentId, memo);
+        
+        veilTrader.sendLocusPayment(payee, amount, paymentId, memo);
+    }
+    
+    function testGetLocusAddress() public {
+        // In our implementation, getLocusAddress returns the owner
+        assertEq(veilTrader.getLocusAddress(), owner);
     }
 }
