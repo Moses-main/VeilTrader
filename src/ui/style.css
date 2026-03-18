@@ -34,6 +34,208 @@ body {
   min-height: 100vh;
 }
 
+/* Toast Notifications */
+#toast-container {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.toast {
+  padding: 12px 20px;
+  border-radius: 8px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  color: var(--text-primary);
+  font-size: 0.9em;
+  animation: slideIn 0.3s ease;
+  max-width: 350px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+}
+
+.toast.success {
+  border-color: var(--success);
+}
+
+.toast.error {
+  border-color: var(--danger);
+}
+
+.toast.warning {
+  border-color: var(--warning);
+}
+
+.toast-icon {
+  font-size: 1.2em;
+}
+
+@keyframes slideIn {
+  from { transform: translateX(100%); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+
+@keyframes slideOut {
+  from { transform: translateX(0); opacity: 1; }
+  to { transform: translateX(100%); opacity: 0; }
+}
+
+/* Modal */
+.modal {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 9998;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal.open {
+  display: flex;
+}
+
+.modal-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0,0,0,0.7);
+  backdrop-filter: blur(4px);
+}
+
+.modal-content {
+  position: relative;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 24px;
+  width: 90%;
+  max-width: 400px;
+  animation: modalIn 0.3s ease;
+}
+
+@keyframes modalIn {
+  from { transform: scale(0.9); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.modal-header h3 {
+  font-size: 1.25em;
+  font-weight: 600;
+}
+
+.modal-close {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-size: 1.5em;
+  cursor: pointer;
+  padding: 4px;
+  line-height: 1;
+}
+
+.modal-close:hover {
+  color: var(--text-primary);
+}
+
+.modal-subtitle {
+  color: var(--text-secondary);
+  font-size: 0.9em;
+  margin-bottom: 20px;
+}
+
+.wallet-options {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.wallet-option {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-align: left;
+  color: var(--text-primary);
+}
+
+.wallet-option:hover {
+  border-color: var(--accent);
+  background: rgba(99, 102, 241, 0.1);
+}
+
+.wallet-icon-lg {
+  font-size: 1.5em;
+}
+
+.wallet-name {
+  flex: 1;
+  font-weight: 500;
+}
+
+.wallet-desc {
+  font-size: 0.75em;
+  color: var(--text-muted);
+}
+
+.modal-footer {
+  margin-top: 16px;
+  text-align: center;
+}
+
+.privacy-note {
+  font-size: 0.75em;
+  color: var(--text-muted);
+}
+
+/* Wallet Info */
+.wallet-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  background: var(--bg-card);
+  border-radius: 8px;
+}
+
+.wallet-address {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.8em;
+}
+
+.btn-disconnect {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 1.2em;
+  padding: 0 4px;
+}
+
+.btn-disconnect:hover {
+  color: var(--danger);
+}
+
+.hidden {
+  display: none !important;
+}
+
 /* Sidebar */
 .sidebar {
   width: var(--sidebar-width);
@@ -239,12 +441,23 @@ body {
   border: 1px solid var(--border);
   border-radius: 12px;
   padding: 20px;
+  transition: transform 0.2s, border-color 0.2s;
+}
+
+.stat-card:hover {
+  transform: translateY(-2px);
+  border-color: var(--accent);
+}
+
+.stat-icon {
+  font-size: 1.5em;
+  margin-bottom: 8px;
 }
 
 .stat-label {
-  font-size: 0.8em;
+  font-size: 0.75em;
   color: var(--text-secondary);
-  margin-bottom: 8px;
+  margin-bottom: 4px;
   text-transform: uppercase;
   letter-spacing: 0.05em;
 }
@@ -270,6 +483,64 @@ body {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 16px;
+}
+
+/* Charts */
+.chart-card, .portfolio-chart-card {
+  min-height: 280px;
+}
+
+.chart-container {
+  height: 200px;
+  position: relative;
+}
+
+.chart-container-sm {
+  height: 160px;
+  position: relative;
+}
+
+.time-selector {
+  display: flex;
+  gap: 4px;
+}
+
+.time-btn {
+  padding: 4px 8px;
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--text-muted);
+  font-size: 0.75em;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.time-btn:hover, .time-btn.active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: white;
+}
+
+.portfolio-legend {
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+  margin-top: 12px;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.8em;
+  color: var(--text-secondary);
+}
+
+.legend-item .dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
 }
 
 .card {
@@ -430,9 +701,55 @@ body {
 }
 
 .trade-arrow {
-  text-align: center;
-  color: var(--text-muted);
-  font-size: 1.25em;
+  display: flex;
+  justify-content: center;
+}
+
+.swap-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--accent);
+  border: none;
+  color: white;
+  font-size: 1em;
+  cursor: pointer;
+  transition: transform 0.2s, background 0.2s;
+}
+
+.swap-btn:hover {
+  transform: rotate(180deg);
+  background: var(--accent-hover);
+}
+
+.swap-icon {
+  font-size: 1.2em;
+}
+
+.token-input {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.token-input select {
+  width: 100px;
+}
+
+.token-input input,
+.token-input .output-preview {
+  flex: 1;
+  padding: 10px 12px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text-primary);
+  font-size: 0.9em;
+  outline: none;
+}
+
+.token-input input:focus {
+  border-color: var(--accent);
 }
 
 .btn-trade {
@@ -444,10 +761,32 @@ body {
   font-weight: 500;
   cursor: pointer;
   transition: background 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
 }
 
 .btn-trade:hover {
   background: var(--accent-hover);
+}
+
+.btn-trade:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.btn-spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid transparent;
+  border-top-color: white;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
 }
 
 /* Connections */

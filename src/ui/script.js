@@ -7,16 +7,22 @@ class VeilTraderUI {
     this.agents = [];
     this.users = [];
     this.trades = [];
+    this.priceChart = null;
+    this.portfolioChart = null;
+    this.connectedWallet = null;
     this.init();
   }
 
   async init() {
     this.setupTabs();
     this.setupTradeForm();
+    this.setupWalletModal();
     this.setupWebSocket();
+    this.initCharts();
     await this.loadData();
     this.startPolling();
     this.updateTimestamp();
+    this.setupSwapButton();
   }
 
   setupTabs() {
@@ -34,9 +40,9 @@ class VeilTraderUI {
         const titles = {
           dashboard: { title: 'Dashboard', subtitle: 'Privacy-first autonomous trading' },
           trade: { title: 'Trade', subtitle: 'Execute swaps on Base' },
-          integrations: { title: 'Integrations', subtitle: '15 protocol connections' },
+          integrations: { title: 'Integrations', subtitle: '22 protocol connections' },
           ai: { title: 'AI Analysis', subtitle: 'Market insights powered by AI' },
-          prizes: { title: 'Prize Tracks', subtitle: '~$70,000 targeted' },
+          prizes: { title: 'Prize Tracks', subtitle: '~$93,000 targeted' },
           api: { title: 'API', subtitle: 'Connect external services' }
         };
         
@@ -45,6 +51,19 @@ class VeilTraderUI {
         document.getElementById('page-subtitle').textContent = titles2.subtitle;
       });
     });
+  }
+
+  setupSwapButton() {
+    const swapBtn = document.getElementById('swap-tokens');
+    if (swapBtn) {
+      swapBtn.addEventListener('click', () => {
+        const from = document.getElementById('trade-from');
+        const to = document.getElementById('trade-to');
+        const temp = from.value;
+        from.value = to.value;
+        to.value = temp;
+      });
+    }
   }
 
   setupTradeForm() {
@@ -65,6 +84,143 @@ class VeilTraderUI {
     }
   }
 
+  setupWalletModal() {
+    const modal = document.getElementById('wallet-modal');
+    const connectBtn = document.getElementById('connect-wallet-btn');
+    const closeBtn = modal?.querySelector('.modal-close');
+    const backdrop = modal?.querySelector('.modal-backdrop');
+    const walletOptions = modal?.querySelectorAll('.wallet-option');
+
+    connectBtn?.addEventListener('click', () => {
+      modal.classList.add('open');
+    });
+
+    closeBtn?.addEventListener('click', () => {
+      modal.classList.remove('open');
+    });
+
+    backdrop?.addEventListener('click', () => {
+      modal.classList.remove('open');
+    });
+
+    walletOptions?.forEach(option => {
+      option.addEventListener('click', async () => {
+        const walletType = option.dataset.wallet;
+        await this.connectWallet(walletType);
+        modal.classList.remove('open');
+      });
+    });
+
+    document.getElementById('disconnect-btn')?.addEventListener('click', () => {
+      this.disconnectWallet();
+    });
+  }
+
+  async connectWallet(type) {
+    if (type === 'metamask') {
+      if (typeof window.ethereum !== 'undefined') {
+        try {
+          const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+          if (accounts.length > 0) {
+            this.connectedWallet = accounts[0];
+            this.showWalletInfo(accounts[0]);
+            this.showToast('Wallet connected!', 'success');
+          }
+        } catch (error) {
+          this.showToast('Failed to connect MetaMask', 'error');
+        }
+      } else {
+        this.showToast('MetaMask not installed', 'error');
+      }
+    } else {
+      this.showToast(`${type} connection coming soon`, 'info');
+    }
+  }
+
+  disconnectWallet() {
+    this.connectedWallet = null;
+    document.getElementById('wallet-info')?.classList.add('hidden');
+    document.getElementById('connect-wallet-btn')?.classList.remove('hidden');
+    this.showToast('Wallet disconnected', 'info');
+  }
+
+  showWalletInfo(address) {
+    const btn = document.getElementById('connect-wallet-btn');
+    const info = document.getElementById('wallet-info');
+    const addr = document.getElementById('wallet-address');
+    
+    if (btn && info && addr) {
+      btn.classList.add('hidden');
+      info.classList.remove('hidden');
+      addr.textContent = address.slice(0, 6) + '...' + address.slice(-4);
+    }
+  }
+
+  initCharts() {
+    const priceCtx = document.getElementById('price-chart');
+    const portfolioCtx = document.getElementById('portfolio-chart');
+
+    if (priceCtx) {
+      const labels = [];
+      const data = [];
+      const now = Date.now();
+      for (let i = 23; i >= 0; i--) {
+        labels.push(new Date(now - i * 3600000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
+        data.push(3200 + Math.random() * 200 - 100);
+      }
+
+      this.priceChart = new Chart(priceCtx, {
+        type: 'line',
+        data: {
+          labels,
+          datasets: [{
+            label: 'ETH Price',
+            data,
+            borderColor: '#6366f1',
+            backgroundColor: 'rgba(99, 102, 241, 0.1)',
+            fill: true,
+            tension: 0.4,
+            pointRadius: 0,
+            borderWidth: 2
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: {
+            x: { display: false },
+            y: {
+              display: true,
+              grid: { color: 'rgba(255,255,255,0.05)' },
+              ticks: { color: '#555566', callback: v => '$' + v.toFixed(0) }
+            }
+          }
+        }
+      });
+    }
+
+    if (portfolioCtx) {
+      this.portfolioChart = new Chart(portfolioCtx, {
+        type: 'doughnut',
+        data: {
+          labels: ['ETH', 'USDC', 'WETH'],
+          datasets: [{
+            data: [45, 35, 20],
+            backgroundColor: ['#6366f1', '#22c55e', '#f59e0b'],
+            borderWidth: 0
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          cutout: '70%'
+        }
+      });
+    }
+  }
+
   async executeTrade(full = false) {
     const from = full ? document.getElementById('token-in').value : document.getElementById('trade-from').value;
     const to = full ? document.getElementById('token-out').value : document.getElementById('trade-to').value;
@@ -72,14 +228,17 @@ class VeilTraderUI {
     const action = full ? document.getElementById('trade-action').value : (from === 'ETH' || from === 'WETH' ? 'BUY' : 'SELL');
 
     if (!amount || parseFloat(amount) <= 0) {
-      this.showNotification('Please enter a valid amount', 'error');
+      this.showToast('Please enter a valid amount', 'error');
       return;
     }
 
-    const btn = full ? fullForm?.querySelector('button[type="submit"]') : quickForm?.querySelector('button[type="submit"]');
+    const form = full ? document.getElementById('trade-form') : document.getElementById('quick-trade-form');
+    const btn = form?.querySelector('button[type="submit"]');
+    const spinner = btn?.querySelector('.btn-spinner');
+    
     if (btn) {
-      btn.textContent = 'Executing...';
       btn.disabled = true;
+      if (spinner) spinner.classList.remove('hidden');
     }
 
     try {
@@ -91,7 +250,7 @@ class VeilTraderUI {
           tokenIn: from,
           tokenOut: to,
           amountIn: amount,
-          userAddress: '0xe81e8078f2D284C92D6d97B5d4769af81e0cA11C'
+          userAddress: this.connectedWallet || '0xe81e8078f2D284C92D6d97B5d4769af81e0cA11C'
         })
       });
 
@@ -101,18 +260,18 @@ class VeilTraderUI {
         this.tradeCount++;
         this.updateStats();
         this.addActivity(`Trade ${action} ${amount} ${from} → ${to}`, 'success');
-        this.showNotification(`Trade executed! TX: ${result.txHash?.slice(0, 10)}...`, 'success');
+        this.showToast(`Trade executed! TX: ${result.txHash?.slice(0, 10)}...`, 'success');
         this.addTradeToHistory(result, action, from, to, amount);
       } else {
-        this.showNotification(result.error || 'Trade failed', 'error');
+        this.showToast(result.error || 'Trade failed', 'error');
       }
     } catch (error) {
-      this.showNotification('Trade execution failed', 'error');
+      this.showToast('Trade execution failed', 'error');
     }
 
     if (btn) {
-      btn.textContent = 'Execute Trade';
       btn.disabled = false;
+      if (spinner) spinner.classList.add('hidden');
     }
   }
 
@@ -230,7 +389,6 @@ class VeilTraderUI {
     if (trendEl) trendEl.textContent = ai.marketData?.trend || '—';
     if (riskEl) riskEl.textContent = ai.risk || '—';
 
-    // Update AI Analysis tab
     const fullAnalysis = document.getElementById('ai-analysis-full');
     if (fullAnalysis && ai) {
       fullAnalysis.innerHTML = `
@@ -296,8 +454,25 @@ class VeilTraderUI {
     }
   }
 
-  showNotification(message, type = 'info') {
-    console.log(`[${type.toUpperCase()}] ${message}`);
+  showToast(message, type = 'info') {
+    const container = document.getElementById('toast-container');
+    if (!container) return;
+
+    const icons = { success: '✅', error: '❌', warning: '⚠️', info: 'ℹ️' };
+    
+    const toast = document.createElement('div');
+    toast.className = `toast ${type}`;
+    toast.innerHTML = `
+      <span class="toast-icon">${icons[type] || icons.info}</span>
+      <span class="toast-message">${message}</span>
+    `;
+    
+    container.appendChild(toast);
+    
+    setTimeout(() => {
+      toast.style.animation = 'slideOut 0.3s ease forwards';
+      setTimeout(() => toast.remove(), 300);
+    }, 4000);
   }
 
   startPolling() {

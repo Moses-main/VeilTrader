@@ -8,8 +8,44 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
+  <!-- Toast Notification Container -->
+  <div id="toast-container"></div>
+  
+  <!-- Wallet Connection Modal -->
+  <div id="wallet-modal" class="modal">
+    <div class="modal-backdrop"></div>
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>Connect Wallet</h3>
+        <button class="modal-close">&times;</button>
+      </div>
+      <p class="modal-subtitle">Choose how to connect to VeilTrader</p>
+      <div class="wallet-options">
+        <button class="wallet-option" data-wallet="metamask">
+          <span class="wallet-icon-lg">🦊</span>
+          <span class="wallet-name">MetaMask</span>
+          <span class="wallet-desc">Connect with browser extension</span>
+        </button>
+        <button class="wallet-option" data-wallet="walletconnect">
+          <span class="wallet-icon-lg">🔗</span>
+          <span class="wallet-name">WalletConnect</span>
+          <span class="wallet-desc">Scan with mobile wallet</span>
+        </button>
+        <button class="wallet-option" data-wallet="coinbase">
+          <span class="wallet-icon-lg">💰</span>
+          <span class="wallet-name">Coinbase Wallet</span>
+          <span class="wallet-desc">Connect with Coinbase</span>
+        </button>
+      </div>
+      <div class="modal-footer">
+        <span class="privacy-note">Your keys stay on your device</span>
+      </div>
+    </div>
+  </div>
+
   <div class="app">
     <!-- Sidebar -->
     <aside class="sidebar">
@@ -56,7 +92,7 @@
           <span class="status-dot"></span>
           <span id="sidebar-status">Starting...</span>
         </div>
-        <div class="contract-pill" id="contract-short">0x0c743...</div>
+        <div class="contract-pill" id="contract-short" title="Contract Address">0x0c743...</div>
       </div>
     </aside>
 
@@ -76,6 +112,10 @@
             <span class="wallet-icon">◈</span>
             <span class="wallet-text">Connect</span>
           </button>
+          <div id="wallet-info" class="wallet-info hidden">
+            <span class="wallet-address" id="wallet-address">0x...1234</span>
+            <button id="disconnect-btn" class="btn-disconnect">×</button>
+          </div>
         </div>
       </header>
 
@@ -83,21 +123,25 @@
       <section class="tab-content active" id="dashboard-content">
         <div class="stats-grid">
           <div class="stat-card">
+            <div class="stat-icon">📊</div>
             <div class="stat-label">Total Trades</div>
             <div class="stat-value" id="stat-trades">0</div>
             <div class="stat-change positive">+12 today</div>
           </div>
           <div class="stat-card">
-            <div class="stat-label">Portfolio</div>
+            <div class="stat-icon">💰</div>
+            <div class="stat-label">Portfolio Value</div>
             <div class="stat-value" id="stat-portfolio">$0</div>
             <div class="stat-change" id="portfolio-change">—</div>
           </div>
           <div class="stat-card">
+            <div class="stat-icon">🎯</div>
             <div class="stat-label">Win Rate</div>
             <div class="stat-value" id="stat-winrate">0%</div>
             <div class="stat-change positive">Last 30 days</div>
           </div>
           <div class="stat-card">
+            <div class="stat-icon">🤖</div>
             <div class="stat-label">Active Agents</div>
             <div class="stat-value" id="stat-agents">1</div>
             <div class="stat-change">Connected</div>
@@ -105,6 +149,36 @@
         </div>
 
         <div class="dashboard-grid">
+          <!-- Price Chart -->
+          <div class="card chart-card">
+            <div class="card-header">
+              <h3>ETH/USDC Price</h3>
+              <div class="time-selector">
+                <button class="time-btn active" data-time="1H">1H</button>
+                <button class="time-btn" data-time="24H">24H</button>
+                <button class="time-btn" data-time="7D">7D</button>
+              </div>
+            </div>
+            <div class="chart-container">
+              <canvas id="price-chart"></canvas>
+            </div>
+          </div>
+
+          <!-- Portfolio Chart -->
+          <div class="card portfolio-chart-card">
+            <div class="card-header">
+              <h3>Portfolio Allocation</h3>
+            </div>
+            <div class="chart-container-sm">
+              <canvas id="portfolio-chart"></canvas>
+            </div>
+            <div class="portfolio-legend" id="portfolio-legend">
+              <div class="legend-item"><span class="dot" style="background: #6366f1"></span>ETH 45%</div>
+              <div class="legend-item"><span class="dot" style="background: #22c55e"></span>USDC 35%</div>
+              <div class="legend-item"><span class="dot" style="background: #f59e0b"></span>WETH 20%</div>
+            </div>
+          </div>
+
           <!-- Activity Feed -->
           <div class="card activity-card">
             <div class="card-header">
@@ -152,32 +226,42 @@
           <div class="card trade-card">
             <div class="card-header">
               <h3>Quick Trade</h3>
+              <span class="swap-icon">⚡</span>
             </div>
             <form id="quick-trade-form" class="trade-form">
               <div class="form-group">
                 <label>From</label>
-                <select id="trade-from">
-                  <option value="ETH">ETH</option>
-                  <option value="USDC">USDC</option>
-                  <option value="WETH">WETH</option>
-                </select>
-                <input type="number" id="trade-amount" placeholder="0.0" step="0.01">
+                <div class="token-input">
+                  <select id="trade-from">
+                    <option value="ETH">ETH</option>
+                    <option value="USDC">USDC</option>
+                    <option value="WETH">WETH</option>
+                  </select>
+                  <input type="number" id="trade-amount" placeholder="0.0" step="0.01">
+                </div>
               </div>
-              <div class="trade-arrow">↓</div>
+              <div class="trade-arrow">
+                <button type="button" class="swap-btn" id="swap-tokens">⇅</button>
+              </div>
               <div class="form-group">
                 <label>To</label>
-                <select id="trade-to">
-                  <option value="USDC">USDC</option>
-                  <option value="ETH">ETH</option>
-                  <option value="WETH">WETH</option>
-                </select>
-                <div class="output-preview" id="trade-output">—</div>
+                <div class="token-input">
+                  <select id="trade-to">
+                    <option value="USDC">USDC</option>
+                    <option value="ETH">ETH</option>
+                    <option value="WETH">WETH</option>
+                  </select>
+                  <div class="output-preview" id="trade-output">—</div>
+                </div>
               </div>
-              <button type="submit" class="btn-trade">Execute Trade</button>
+              <button type="submit" class="btn-trade">
+                <span>Execute Trade</span>
+                <span class="btn-spinner hidden"></span>
+              </button>
             </form>
           </div>
 
-          <!-- Connected -->
+          <!-- Connections -->
           <div class="card connections-card">
             <div class="card-header">
               <h3>Connections</h3>
@@ -192,6 +276,11 @@
                 <span class="conn-icon">👤</span>
                 <span class="conn-label">Users</span>
                 <span class="conn-count" id="users-count">0</span>
+              </div>
+              <div class="connection-item">
+                <span class="conn-icon">🔗</span>
+                <span class="conn-label">Integrations</span>
+                <span class="conn-count" id="integrations-count">22</span>
               </div>
             </div>
           </div>
