@@ -33,9 +33,10 @@ class DecisionEngine {
     // Parse AI recommendation
     if (analysis.recommendation === 'BUY' || analysis.recommendation === 'SELL') {
       decision.action = analysis.recommendation;
-      decision.targetAsset = analysis.targetAsset;
+      // Default to WETH if not specified
+      decision.targetAsset = analysis.targetAsset || 'WETH';
       decision.targetAmount = this.calculateTradeAmount(
-        analysis.targetAmount,
+        analysis.targetAmount || portfolio.totalValue * 0.05,
         portfolio,
         analysis
       );
