@@ -17,8 +17,28 @@ async function main() {
       uniswapApiKey: process.env.UNISWAP_API_KEY,
       privateKey: process.env.PRIVATE_KEY,
       rpcUrl: process.env.RPC_URL,
+      chainId: process.env.CHAIN_ID || '84532',
       agentId: process.env.AGENT_ID,
-      teamId: process.env.TEAM_ID
+      teamId: process.env.TEAM_ID,
+      maxSlippage: process.env.MAX_SLIPPAGE,
+      minProfitThreshold: process.env.MIN_PROFIT_THRESHOLD,
+      riskTolerance: process.env.RISK_TOLERANCE,
+      cycleInterval: process.env.CYCLE_INTERVAL,
+      
+      // Extension flags
+      enableStETH: process.env.ENABLE_STETH === 'true',
+      enableStatusNetwork: process.env.ENABLE_STATUS_NETWORK === 'true',
+      enableLidoMCP: process.env.ENABLE_LIDO_MCP === 'true',
+      enableENS: process.env.ENABLE_ENS === 'true',
+      enableCelo: process.env.ENABLE_CELO === 'true',
+      celoTestnet: process.env.CELO_TESTNET !== 'false',
+      celoAutoExecute: process.env.CELO_AUTO_EXECUTE === 'true',
+      celoRpcUrl: process.env.CELO_RPC_URL,
+      
+      // API keys
+      olasApiKey: process.env.OLAS_API_KEY,
+      openServApiKey: process.env.OPENSERV_API_KEY,
+      filecoinApiKey: process.env.FILECOIN_API_KEY
     });
 
     // Initialize the agent

@@ -217,7 +217,8 @@ class VeilTrader {
     if (this.config.enableCelo) {
       try {
         this.celo = new CeloIntegration({
-          wallet: this.wallet
+          wallet: this.wallet,
+          celoRpcUrl: this.config.celoRpcUrl
         });
         await this.celo.initialize(this.config.celoTestnet !== false);
         logger.info('✅ Celo extension enabled');
@@ -332,11 +333,40 @@ class VeilTrader {
       }
     }
 
-    // Celo: Optionally execute on Celo if configured
-    if (this.celo && this.config.celoAutoExecute) {
+    // Celo: Execute cross-chain trades if configured
+    if (this.celo && this.config.celoAutoExecute && decision.action !== 'HOLD') {
       try {
-        logger.info('🔄 Checking for Celo opportunities...');
-        // Add Celo-specific trading logic here
+        logger.info('🌐 Checking for Celo cross-chain opportunities...');
+        
+        // Get Celo portfolio and market data
+        const celoPortfolio = await this.celo.getCeloPortfolio();
+        const marketData = await this.celo.getMarketData();
+        
+        logger.info(`📊 Celo Portfolio: ${JSON.stringify(celoPortfolio.tokens)}`);
+        logger.info(`📈 CELO Price: $${marketData.celoPrice}`);
+        
+        // Execute swap on Celo if we have a decision
+        const fromToken = this.celo.celoTokens.CELO;
+        const toToken = this.celo.celoTokens.cUSD;
+        
+        // Check if we have enough CELO to trade
+        const celoBalance = parseFloat(celoPortfolio.tokens.CELO || '0');
+        if (celoBalance > 0.1) {
+          const swapAmount = ethers.parseEther((celoBalance * 0.1).toString()); // Trade 10%
+          
+          logger.info(`💱 Attempting CELO -> cUSD swap on Celo...`);
+          const swapResult = await this.celo.executeSwap({
+            fromToken: fromToken,
+            toToken: toToken,
+            amount: swapAmount
+          });
+          
+          if (swapResult.success) {
+            logger.info(`✅ Celo swap successful: ${swapResult.txHash}`);
+          } else {
+            logger.warn(`⚠️ Celo swap failed: ${swapResult.error}`);
+          }
+        }
       } catch (error) {
         logger.warn('⚠️ Celo execution failed:', error.message);
       }
