@@ -2,6 +2,7 @@
  * Bankr Gateway
  * 
  * Privacy-preserving LLM inference via Bankr
+ * Primary AI provider (requires credits for full functionality)
  * https://llm.bankr.bot
  */
 
@@ -12,6 +13,7 @@ class BankrGateway {
   constructor(config) {
     this.apiKey = config.apiKey;
     this.baseUrl = 'https://llm.bankr.bot';
+    this.freeGateway = config.freeGateway; // Reference to FreeAIGateway
   }
 
   /**
@@ -51,11 +53,23 @@ class BankrGateway {
       );
 
       const analysis = this.parseAnalysis(response.data);
-      logger.info('✅ AI analysis received');
+      logger.info('✅ AI analysis received from Bankr');
       return analysis;
 
     } catch (error) {
-      logger.warn('⚠️ Bankr Gateway unavailable, using fallback analysis');
+      logger.warn('⚠️ Bankr Gateway unavailable:', error.message);
+      
+      // Try free AI gateway if available
+      if (this.freeGateway) {
+        logger.info('🤖 Trying free AI gateway...');
+        const freeAnalysis = await this.freeGateway.analyzePortfolio(portfolio);
+        if (freeAnalysis) {
+          logger.info('✅ AI analysis received from free gateway');
+          return freeAnalysis;
+        }
+      }
+      
+      logger.warn('⚠️ All AI providers failed, using fallback analysis');
       return this.getFallbackAnalysis(portfolio);
     }
   }

@@ -17,6 +17,7 @@ const UniswapExecutor = require('../UniswapExecutor');
 const VeilTraderContract = require('../VeilTraderContract');
 const IdentityRegistry = require('../../identity/IdentityRegistry');
 const BankrGateway = require('../../services/BankrGateway');
+const FreeAIGateway = require('../../services/FreeAIGateway');
 const logger = require('../../utils/logger');
 
 // Extension imports
@@ -62,9 +63,17 @@ class VeilTrader {
     const address = await this.wallet.getAddress();
     logger.info(`💼 Wallet address: ${address}`);
 
-    // Initialize core components
+    // Initialize free AI gateway first
+    this.freeGateway = new FreeAIGateway({
+      geminiApiKey: this.config.geminiApiKey,
+      groqApiKey: this.config.groqApiKey,
+      huggingFaceApiKey: this.config.huggingFaceApiKey
+    });
+
+    // Initialize Bankr gateway with fallback to free AI
     this.bankrGateway = new BankrGateway({
-      apiKey: this.config.bankrApiKey
+      apiKey: this.config.bankrApiKey,
+      freeGateway: this.freeGateway
     });
 
     this.portfolioAnalyzer = new PortfolioAnalyzer({

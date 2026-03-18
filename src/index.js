@@ -13,13 +13,25 @@ async function main() {
   
   try {
     const agent = new VeilTrader({
+      // AI APIs (Bankr primary, others free fallback)
       bankrApiKey: process.env.BANKR_API_KEY,
+      geminiApiKey: process.env.GEMINI_API_KEY,
+      groqApiKey: process.env.GROQ_API_KEY,
+      huggingFaceApiKey: process.env.HUGGINGFACE_API_KEY,
+      
+      // Trading APIs
       uniswapApiKey: process.env.UNISWAP_API_KEY,
+      
+      // Wallet & Network
       privateKey: process.env.PRIVATE_KEY,
       rpcUrl: process.env.RPC_URL,
       chainId: process.env.CHAIN_ID || '84532',
+      
+      // Agent Identity
       agentId: process.env.AGENT_ID,
       teamId: process.env.TEAM_ID,
+      
+      // Risk Parameters
       maxSlippage: process.env.MAX_SLIPPAGE,
       minProfitThreshold: process.env.MIN_PROFIT_THRESHOLD,
       riskTolerance: process.env.RISK_TOLERANCE,
@@ -35,7 +47,7 @@ async function main() {
       celoAutoExecute: process.env.CELO_AUTO_EXECUTE === 'true',
       celoRpcUrl: process.env.CELO_RPC_URL,
       
-      // API keys
+      // Extension API keys
       olasApiKey: process.env.OLAS_API_KEY,
       openServApiKey: process.env.OPENSERV_API_KEY,
       filecoinApiKey: process.env.FILECOIN_API_KEY
