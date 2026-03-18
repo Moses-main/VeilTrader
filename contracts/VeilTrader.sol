@@ -4,7 +4,7 @@ pragma solidity ^0.8.19;
 /**
  * @title VeilTrader
  * @notice Core trading contract for the VeilTrader agent
- * @dev Integrates with ERC-8004 identity and reputation registry
+ * @dev Integrates with ERC-8004 identity and reputation registry, Self Protocol ZK proofs, Delegations, and Locus payments
  */
 interface IIdentityRegistry {
     function register(string calldata metadataURI, string calldata domain) external returns (uint256 tokenId);
@@ -49,11 +49,13 @@ contract VeilTrader {
         uint256 timestamp;
         string metadata;
         uint256 reputationFeedbackGiven; // Track if feedback was given for this trade
+        bytes32 proofHash; // Hash of the Self ID proof for this trade
     }
     
     bytes32 public agentId;
     address public owner;
     uint256 public erc8004TokenId; // ERC-721 token ID from ERC-8004 registry
+    bytes32 public selfId; // The agent's self.id identifier
     
     Trade[] public trades;
     mapping(bytes32 => uint256) public tradeIndex;
@@ -61,6 +63,22 @@ contract VeilTrader {
     // Track which trades have had reputation feedback given
     mapping(uint256 => bool) public tradeFeedbackGiven;
     
+    // Mapping of proof hash => bool to track verified proofs
+    mapping(bytes32 => bool) public verifiedProofs;
+    
+    // Delegations
+    struct DelegationParams {
+        address delegate;
+        uint256 maxValuePerTx; // Maximum value per transaction in wei
+        uint256 maxTotalValue; // Maximum total value that can be spent
+        uint256 totalSpent;    // Total value already spent
+        bool active;
+    }
+
+    // Mapping of delegator => delegate => params
+    mapping(address => mapping(address => DelegationParams)) public delegations;
+
+    // Events
     event TradeExecuted(
         bytes32 indexed actionHash,
         string actionType,
@@ -80,17 +98,51 @@ contract VeilTrader {
         string tag1,
         string tag2
     );
-    
+    event SelfIdSet(bytes32 indexed selfId);
+    event ProofSubmitted(bytes32 indexed proofHash, string attributes);
+    event ProofVerified(bytes32 indexed proofHash, bool isValid);
+    event TradeProofSubmitted(
+        bytes32 indexed actionHash,
+        bytes32 indexed proofHash,
+        string attributes
+    );
+    event TradeProofVerified(
+        bytes32 indexed proofHash,
+        bool isValid
+    );
+    event DelegationGranted(
+        address indexed delegator,
+        address indexed delegate,
+        uint256 maxValuePerTx,
+        uint256 maxTotalValue
+    );
+    event DelegationRevoked(
+        address indexed delegator,
+        address indexed delegate
+    );
+    event LocusPaymentReceived(
+        address indexed from,
+        uint256 amount,
+        string paymentId,
+        string memo
+    );
+    event LocusPaymentSent(
+        address indexed to,
+        uint256 amount,
+        string paymentId,
+        string memo
+    );
+
     modifier onlyOwner() {
         require(msg.sender == owner, "Not authorized");
         _;
     }
-    
+
     constructor(bytes32 _agentId) {
         agentId = _agentId;
         owner = msg.sender;
     }
-    
+
     function executeTrade(
         string memory _actionType,
         address _tokenIn,
@@ -118,7 +170,8 @@ contract VeilTrader {
             amountOut: _amountOut,
             timestamp: block.timestamp,
             metadata: _metadata,
-            reputationFeedbackGiven: 0 // Initialize as not given
+            reputationFeedbackGiven: 0, // Initialize as not given
+            proofHash: 0 // Initialize as no proof
         });
         
         trades.push(trade);
@@ -141,7 +194,7 @@ contract VeilTrader {
         
         return actionHash;
     }
-    
+
     function getTrade(bytes32 _actionHash) external view returns (Trade memory) {
         uint256 index = tradeIndex[_actionHash];
         require(index < trades.length, "Trade not found");
@@ -152,6 +205,36 @@ contract VeilTrader {
         return trades;
     }
     
+    /**
+     * @notice Check if a caller is authorized to execute a trade (either owner or active delegate with sufficient limits)
+     * @dev Used internally to check authorization for trade execution
+     * @param caller The address calling the function
+     * @param value The value of the trade in wei
+     * @return bool True if authorized, false otherwise
+     */
+    function isAuthorized(address caller, uint256 value) internal view returns (bool) {
+        // Owner is always authorized
+        if (caller == owner) {
+            return true;
+        }
+
+        // Check if caller is an active delegate with sufficient limits
+        DelegationParams memory params = delegations[owner][caller];
+        if (params.active) {
+            // Check per-transaction limit
+            if (value > params.maxValuePerTx) {
+                return false;
+            }
+            // Check total limit
+            if (params.totalSpent + value > params.maxTotalValue) {
+                return false;
+            }
+            return true;
+        }
+
+        return false;
+    }
+
     function getTradeCount() external view returns (uint256) {
         return trades.length;
     }
@@ -236,14 +319,6 @@ contract VeilTrader {
         
         // Update the trade record to note feedback was given
         trades[tradeIdx].reputationFeedbackGiven = block.timestamp;
-        
-        emit ReputationFeedbackGiven(
-            tradeIdx,
-            value,
-            decimals,
-            tag1,
-            tag2
-        );
     }
 
     /**
@@ -320,29 +395,122 @@ contract VeilTrader {
         ));
     }
 
-    // ========== Delegations ==========
-    struct DelegationParams {
-        address delegate;
-        uint256 maxValuePerTx; // Maximum value per transaction in wei
-        uint256 maxTotalValue; // Maximum total value that can be spent
-        uint256 totalSpent;    // Total value already spent
-        bool active;
+    /**
+     * @notice Set the Self Agent ID
+     * @dev Only the owner can set the Self Agent ID
+     * @param _selfId The Self Agent ID (bytes32) from Self Protocol
+     */
+    function setSelfId(bytes32 _selfId) external onlyOwner {
+        selfId = _selfId;
+        emit SelfIdSet(_selfId);
     }
 
-    // Mapping of delegator => delegate => params
-    mapping(address => mapping(address => DelegationParams)) public delegations;
+    /**
+     * @notice Submit a ZK proof for agent-level attributes (e.g., reputation)
+     * @dev In a real implementation, this would verify a zk-SNARK proof
+     * @param proofHash Hash of the proof (for simplicity, we're using a commitment)
+     * @param attributes JSON string of attributes being proven (e.g., trading reputation)
+     * @return success Whether the proof was accepted
+     */
+    function submitProof(bytes32 proofHash, string calldata attributes) external returns (bool) {
+        // In a real implementation, we would verify the zk-SNARK proof here
+        // For this simulation, we'll accept any proof with a non-zero hash
+        if (proofHash == 0x0) {
+            return false;
+        }
+        
+        // Store the proof as verified (in reality, this would be after cryptographic verification)
+        verifiedProofs[proofHash] = true;
+        
+        emit ProofSubmitted(proofHash, attributes);
+        emit ProofVerified(proofHash, true);
+        
+        return true;
+    }
 
-    event DelegationGranted(
-        address indexed delegator,
-        address indexed delegate,
-        uint256 maxValuePerTx,
-        uint256 maxTotalValue
-    );
+    /**
+     * @notice Check if a proof has been verified
+     * @param proofHash The hash of the proof to check
+     * @return verified Whether the proof has been verified
+     */
+    function isProofVerified(bytes32 proofHash) external view returns (bool) {
+        return verifiedProofs[proofHash];
+    }
 
-    event DelegationRevoked(
-        address indexed delegator,
-        address indexed delegate
-    );
+    /**
+     * @notice Get the agent's Self ID
+     * @dev Returns the self.id identifier for this agent
+     * @return selfId The agent's self.id
+     */
+    function getSelfId() external view returns (bytes32) {
+        return selfId;
+    }
+
+    /**
+     * @notice Submit a ZK proof for a specific trade's attributes
+     * @dev In a real implementation, this would verify a zk-SNARK proof for the trade
+     * @param actionHash The hash of the trade (from the Trade struct)
+     * @param proofHash Hash of the proof (for simplicity, we're using a commitment)
+     * @param attributes JSON string of attributes being proven for this trade (e.g., profit amount range)
+     * @return success Whether the proof was accepted
+     */
+    function submitTradeProof(
+        bytes32 actionHash,
+        bytes32 proofHash,
+        string calldata attributes
+    ) external returns (bool) {
+        // Check that the trade exists
+        require(tradeIndex[actionHash] < trades.length, "Trade not found");
+        uint256 idx = tradeIndex[actionHash];
+        
+        // Check that no proof has been submitted for this trade yet
+        require(trades[idx].proofHash == 0x0, "Proof already submitted for this trade");
+        
+        // In a real implementation, we would verify the zk-SNARK proof here
+        // For this simulation, we'll accept any proof with a non-zero hash
+        if (proofHash == 0x0) {
+            return false;
+        }
+        
+        // Store the proof hash in the trade
+        trades[idx].proofHash = proofHash;
+        
+        // Mark the proof as verified
+        verifiedProofs[proofHash] = true;
+        
+        emit TradeProofSubmitted(actionHash, proofHash, attributes);
+        emit TradeProofVerified(proofHash, true);
+        
+        return true;
+    }
+
+    /**
+     * @notice Check if a trade has a verified proof
+     * @param actionHash The hash of the trade to check
+     * @return hasProof Whether the trade has a verified proof
+     * @return proofHash The hash of the proof if verified, otherwise 0
+     */
+    function getTradeProof(bytes32 actionHash) external view returns (bool hasProof, bytes32 proofHash) {
+        require(tradeIndex[actionHash] < trades.length, "Trade not found");
+        uint256 idx = tradeIndex[actionHash];
+        proofHash = trades[idx].proofHash;
+        hasProof = (proofHash != 0x0);
+    }
+
+    /**
+     * @notice Update the total spent for a delegate after a successful trade
+     * @dev Internal function to update delegation tracking
+     * @param delegate The delegate address
+     * @param value The value of the trade in wei
+     */
+    function updateDelegateTotalSpent(address delegate, uint256 value) internal {
+        DelegationParams memory params = delegations[owner][delegate];
+        if (params.active) {
+            // In a real implementation, we would use a non-reentrant pattern or checks-effects-interactions
+            // For simplicity, we assume this is called only from executeTrade which is non-reentrant
+            delegations[owner][delegate].totalSpent += value;
+        }
+    }
 
     /**
      * @notice Grant delegation to an address with spending limits
@@ -384,69 +552,6 @@ contract VeilTrader {
 
         emit DelegationRevoked(owner, delegate);
     }
-
-    /**
-     * @notice Check if a caller is authorized to execute a trade (either owner or active delegate with sufficient limits)
-     * @dev Used internally to check authorization for trade execution
-     * @param caller The address calling the function
-     * @param value The value of the trade in wei
-     * @return bool True if authorized, false otherwise
-     */
-    function isAuthorized(address caller, uint256 value) internal view returns (bool) {
-        // Owner is always authorized
-        if (caller == owner) {
-            return true;
-        }
-
-        // Check if caller is an active delegate with sufficient limits
-        DelegationParams memory params = delegations[owner][caller];
-        if (params.active) {
-            // Check per-transaction limit
-            if (value > params.maxValuePerTx) {
-                return false;
-            }
-            // Check total limit
-            if (params.totalSpent + value > params.maxTotalValue) {
-                return false;
-            }
-            return true;
-        }
-
-        return false;
-    }
-
-    /**
-     * @notice Update the total spent for a delegate after a successful trade
-     * @dev Internal function to update delegation tracking
-     * @param delegate The delegate address
-     * @param value The value of the trade in wei
-     */
-    function updateDelegateTotalSpent(address delegate, uint256 value) internal {
-        DelegationParams memory params = delegations[owner][delegate];
-        if (params.active) {
-            // In a real implementation, we would use a non-reentrant pattern or checks-effects-interactions
-            // For simplicity, we assume this is called only from executeTrade which is non-reentrant
-            delegations[owner][delegate].totalSpent += value;
-        }
-    }
-
-    // ========== Locus Integration ==========
-    // Locus is a protocol for agent-native payments
-    // For this implementation, we'll simulate the core concepts
-    
-    event LocusPaymentReceived(
-        address indexed from,
-        uint256 amount,
-        string paymentId,
-        string memo
-    );
-
-    event LocusPaymentSent(
-        address indexed to,
-        uint256 amount,
-        string paymentId,
-        string memo
-    );
 
     /**
      * @notice Receive a payment via Locus
