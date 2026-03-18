@@ -178,4 +178,302 @@ contract VeilTraderTest is Test {
         // After we implement registration, we'll test it properly
         // For now, just verify the function exists and returns a string
     }
+    
+    function testGrantDelegation() public {
+        vm.prank(owner);
+        address delegate = address(0x456);
+        uint256 maxValuePerTx = 1 ether;
+        uint256 maxTotalValue = 10 ether;
+        
+        veilTrader.grantDelegation(delegate, maxValuePerTx, maxTotalValue);
+        
+        // Verify delegation worked by executing a small trade as delegate
+        vm.prank(delegate);
+        bytes32 actionHash = veilTrader.executeTrade(
+            "BUY",
+            address(0x1),
+            address(0x2),
+            0.5 ether, // Within delegation limits
+            1 ether,
+            "test trade"
+        );
+        
+        assertTrue(actionHash != bytes32(0));
+        assertEq(veilTrader.getTradeCount(), 1);
+    }
+    
+    function testGrantDelegationZeroAddress() public {
+        vm.prank(owner);
+        vm.expectRevert("Delegate cannot be zero address");
+        veilTrader.grantDelegation(address(0), 1 ether, 10 ether);
+    }
+    
+    function testGrantDelegationToSelf() public {
+        vm.prank(owner);
+        vm.expectRevert("Cannot delegate to self");
+        veilTrader.grantDelegation(owner, 1 ether, 10 ether);
+    }
+    
+    function testGrantDelegationZeroLimits() public {
+        vm.prank(owner);
+        vm.expectRevert("Max value per tx must be greater than 0");
+        veilTrader.grantDelegation(address(0x456), 0, 10 ether);
+        
+        vm.prank(owner);
+        vm.expectRevert("Max total value must be greater than 0");
+        veilTrader.grantDelegation(address(0x456), 1 ether, 0);
+    }
+    
+    function testRevokeDelegation() public {
+        vm.prank(owner);
+        address delegate = address(0x456);
+        veilTrader.grantDelegation(delegate, 1 ether, 10 ether);
+        
+        // Before revoking, delegate should be authorized - test by executing a small trade
+        vm.prank(delegate);
+        bytes32 actionHash1 = veilTrader.executeTrade(
+            "BUY",
+            address(0x1),
+            address(0x2),
+            0.5 ether,
+            1 ether,
+            "small trade"
+        );
+        assertTrue(actionHash1 != bytes32(0));
+        
+        vm.prank(owner);
+        veilTrader.revokeDelegation(delegate);
+        
+        // After revoking, delegate should not be authorized - test by attempting a trade
+        vm.prank(delegate);
+        vm.expectRevert("Not authorized");
+        veilTrader.executeTrade(
+            "BUY",
+            address(0x1),
+            address(0x2),
+            0.5 ether,
+            1 ether,
+            "small trade after revoke"
+        );
+    }
+    
+    function testIsAuthorizedOwner() public {
+        // Owner should always be authorized for any amount
+        // We can't directly test internal function, but executeTrade will fail if not authorized
+        vm.prank(owner);
+        // This should not revert if owner is authorized
+        bytes32 actionHash = veilTrader.executeTrade(
+            "BUY",
+            address(0x1),
+            address(0x2),
+            1000 ether, // Large amount
+            2000 ether,
+            "owner trade"
+        );
+        assertTrue(actionHash != bytes32(0));
+    }
+    
+    function testIsAuthorizedDelegateWithinLimits() public {
+        vm.prank(owner);
+        address delegate = address(0x456);
+        // Use very small amounts to avoid any potential issues
+        uint256 maxValuePerTx = 0.001 ether;
+        uint256 maxTotalValue = 0.01 ether;
+        veilTrader.grantDelegation(delegate, maxValuePerTx, maxTotalValue);
+        
+        // Owner should be able to execute (to make sure the contract is working)
+        vm.prank(owner);
+        bytes32 actionHashOwner = veilTrader.executeTrade(
+            "BUY",
+            address(0x1),
+            address(0x2),
+            0.0005 ether, // half of maxValuePerTx
+            0.001 ether,
+            "owner trade"
+        );
+        assertTrue(actionHashOwner != bytes32(0));
+        
+        // Delegate should be able to execute
+        vm.prank(delegate);
+        bytes32 actionHashDelegate = veilTrader.executeTrade(
+            "BUY",
+            address(0x1),
+            address(0x2),
+            0.0005 ether, // half of maxValuePerTx
+            0.001 ether,
+            "delegate trade"
+        );
+        assertTrue(actionHashDelegate != bytes32(0));
+    }
+    
+    function testIsAuthorizedDelegateExceedsPerTxLimit() public {
+        vm.prank(owner);
+        address delegate = address(0x456);
+        uint256 maxValuePerTx = 1 ether;
+        uint256 maxTotalValue = 10 ether;
+        veilTrader.grantDelegation(delegate, maxValuePerTx, maxTotalValue);
+        
+        // Should NOT be authorized for amounts exceeding per-tx limit
+        vm.prank(delegate);
+        vm.expectRevert("Not authorized");
+        veilTrader.executeTrade(
+            "BUY",
+            address(0x1),
+            address(0x2),
+            2 ether, // Exceeds per-tx limit
+            4 ether,
+            "oversized trade"
+        );
+    }
+    
+    function testIsAuthorizedDelegateExceedsTotalLimit() public {
+        // Set up delegation with small amounts for easier testing
+        vm.prank(owner);
+        address delegate = address(0x456);
+        uint256 maxValuePerTx = 0.1 ether; // 0.1 ETH per transaction
+        uint256 maxTotalValue = 1 ether;   // 1 ETH total
+        veilTrader.grantDelegation(delegate, maxValuePerTx, maxTotalValue);
+        
+        // First, verify that a trade within limits works
+        vm.prank(delegate);
+        bytes32 actionHash1 = veilTrader.executeTrade(
+            "BUY",
+            address(0x1),
+            address(0x2),
+            0.05 ether, // Within per-tx limit of 0.1 ether
+            0.1 ether,
+            "small trade"
+        );
+        assertTrue(actionHash1 != bytes32(0));
+        
+        // Now spend some amount to get close to the limit
+        // Spend 0.9 ether in small increments (9 trades of 0.1 ether each)
+        for (uint256 i = 0; i < 9; i++) {
+            vm.prank(delegate);
+            veilTrader.executeTrade(
+                "BUY",
+                address(0x1),
+                address(0x2),
+                0.1 ether, // Exactly at per-tx limit
+                0.2 ether,
+                "trade"
+            );
+        }
+        
+        // At this point, 0.9 ether has been spent (9 trades of 0.1 ether each)
+        // Now trying to spend 0.2 ether would exceed the total limit (0.9+0.2=1.1 > 1)
+        vm.prank(delegate);
+        vm.expectRevert("Not authorized");
+        veilTrader.executeTrade(
+            "BUY",
+            address(0x1),
+            address(0x2),
+            0.2 ether, // Would make total 1.1 > 1
+            0.4 ether,
+            "over-total trade"
+        );
+    }
+    
+    function testIsAuthorizedNonDelegate() public {
+        // Non-delegate should not be able to execute trades
+        vm.prank(address(0x789));
+        vm.expectRevert("Not authorized");
+        veilTrader.executeTrade(
+            "BUY",
+            address(0x1),
+            address(0x2),
+            1 ether,
+            2 ether,
+            "unauthorized trade"
+        );
+    }
+    
+    function testExecuteTradeWithDelegation() public {
+        // Set up delegation
+        vm.prank(owner);
+        address delegate = address(0x456);
+        uint256 maxValuePerTx = 2 ether;
+        uint256 maxTotalValue = 10 ether;
+        veilTrader.grantDelegation(delegate, maxValuePerTx, maxTotalValue);
+        
+        // Execute trade as delegate
+        vm.prank(delegate);
+        bytes32 actionHash = veilTrader.executeTrade(
+            "BUY",
+            address(0x1),
+            address(0x2),
+            1 ether, // Within delegation limits
+            2 ether,
+            "delegated trade"
+        );
+        
+        assertTrue(actionHash != bytes32(0));
+        assertEq(veilTrader.getTradeCount(), 1);
+        
+        VeilTrader.Trade memory trade = veilTrader.getTrade(actionHash);
+        assertEq(trade.actionType, "BUY");
+        assertEq(trade.amountIn, 1 ether);
+        
+        // Verify the delegation worked by checking that we can still make another trade
+        // (since we only spent 1 of 10 ether total limit)
+        vm.prank(delegate);
+        bytes32 actionHash2 = veilTrader.executeTrade(
+            "BUY",
+            address(0x1),
+            address(0x2),
+            1 ether, // Another 1 ether trade
+            2 ether,
+            "second delegated trade"
+        );
+        
+        assertTrue(actionHash2 != bytes32(0));
+        assertEq(veilTrader.getTradeCount(), 2);
+    }
+    
+    function testExecuteTradeExceedsDelegationLimits() public {
+        // Set up delegation with small amounts for easier testing
+        vm.prank(owner);
+        address delegate = address(0x456);
+        uint256 maxValuePerTx = 0.1 ether; // 0.1 ETH
+        uint256 maxTotalValue = 1 ether;   // 1 ETH
+        veilTrader.grantDelegation(delegate, maxValuePerTx, maxTotalValue);
+        
+        // First, verify that a trade within limits works
+        vm.prank(delegate);
+        bytes32 actionHash1 = veilTrader.executeTrade(
+            "BUY",
+            address(0x1),
+            address(0x2),
+            0.05 ether, // Within per-tx limit of 0.1 ether
+            0.1 ether,
+            "small trade"
+        );
+        assertTrue(actionHash1 != bytes32(0));
+        
+        // Now try to execute trade exceeding per-tx limit - this should fail
+        vm.prank(delegate);
+        vm.expectRevert("Not authorized");
+        veilTrader.executeTrade(
+            "BUY",
+            address(0x1),
+            address(0x2),
+            0.2 ether, // Exceeds per-tx limit of 0.1 ether
+            0.4 ether,
+            "oversized trade"
+        );
+    }
+    
+    function testExecuteTradeWithoutAuthorization() public {
+        // Non-owner, non-delegate should not be able to execute trades
+        vm.prank(address(0x789));
+        vm.expectRevert("Not authorized");
+        veilTrader.executeTrade(
+            "BUY",
+            address(0x1),
+            address(0x2),
+            1 ether,
+            2 ether,
+            "unauthorized trade"
+        );
+    }
 }

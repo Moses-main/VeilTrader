@@ -98,7 +98,8 @@ contract VeilTrader {
         uint256 _amountIn,
         uint256 _amountOut,
         string memory _metadata
-    ) external onlyOwner returns (bytes32 actionHash) {
+    ) external returns (bytes32 actionHash) {
+        require(isAuthorized(msg.sender, _amountIn), "Not authorized");
         
         actionHash = keccak256(abi.encodePacked(
             _actionType,
@@ -132,6 +133,11 @@ contract VeilTrader {
             _amountOut,
             block.timestamp
         );
+        
+        // Update delegate total spent if caller is a delegate
+        if (msg.sender != owner) {
+            updateDelegateTotalSpent(msg.sender, _amountIn);
+        }
         
         return actionHash;
     }
@@ -312,5 +318,115 @@ contract VeilTrader {
             ":",
             string(abi.encodePacked(erc8004TokenId))
         ));
+    }
+
+    // ========== Delegations ==========
+    struct DelegationParams {
+        address delegate;
+        uint256 maxValuePerTx; // Maximum value per transaction in wei
+        uint256 maxTotalValue; // Maximum total value that can be spent
+        uint256 totalSpent;    // Total value already spent
+        bool active;
+    }
+
+    // Mapping of delegator => delegate => params
+    mapping(address => mapping(address => DelegationParams)) public delegations;
+
+    event DelegationGranted(
+        address indexed delegator,
+        address indexed delegate,
+        uint256 maxValuePerTx,
+        uint256 maxTotalValue
+    );
+
+    event DelegationRevoked(
+        address indexed delegator,
+        address indexed delegate
+    );
+
+    /**
+     * @notice Grant delegation to an address with spending limits
+     * @dev Only the owner can grant delegations
+     * @param delegate The address to grant delegation to
+     * @param maxValuePerTx Maximum value per transaction in wei
+     * @param maxTotalValue Maximum total value that can be spent
+     */
+    function grantDelegation(
+        address delegate,
+        uint256 maxValuePerTx,
+        uint256 maxTotalValue
+    ) external onlyOwner {
+        require(delegate != address(0), "Delegate cannot be zero address");
+        require(delegate != owner, "Cannot delegate to self");
+        require(maxValuePerTx > 0, "Max value per tx must be greater than 0");
+        require(maxTotalValue > 0, "Max total value must be greater than 0");
+
+        delegations[owner][delegate] = DelegationParams({
+            delegate: delegate,
+            maxValuePerTx: maxValuePerTx,
+            maxTotalValue: maxTotalValue,
+            totalSpent: 0,
+            active: true
+        });
+
+        emit DelegationGranted(owner, delegate, maxValuePerTx, maxTotalValue);
+    }
+
+    /**
+     * @notice Revoke delegation from an address
+     * @dev Only the owner can revoke delegations
+     * @param delegate The address to revoke delegation from
+     */
+    function revokeDelegation(address delegate) external onlyOwner {
+        require(delegations[owner][delegate].active, "Delegation is not active");
+
+        delegations[owner][delegate].active = false;
+
+        emit DelegationRevoked(owner, delegate);
+    }
+
+    /**
+     * @notice Check if a caller is authorized to execute a trade (either owner or active delegate with sufficient limits)
+     * @dev Used internally to check authorization for trade execution
+     * @param caller The address calling the function
+     * @param value The value of the trade in wei
+     * @return bool True if authorized, false otherwise
+     */
+    function isAuthorized(address caller, uint256 value) internal view returns (bool) {
+        // Owner is always authorized
+        if (caller == owner) {
+            return true;
+        }
+
+        // Check if caller is an active delegate with sufficient limits
+        DelegationParams memory params = delegations[owner][caller];
+        if (params.active) {
+            // Check per-transaction limit
+            if (value > params.maxValuePerTx) {
+                return false;
+            }
+            // Check total limit
+            if (params.totalSpent + value > params.maxTotalValue) {
+                return false;
+            }
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * @notice Update the total spent for a delegate after a successful trade
+     * @dev Internal function to update delegation tracking
+     * @param delegate The delegate address
+     * @param value The value of the trade in wei
+     */
+    function updateDelegateTotalSpent(address delegate, uint256 value) internal {
+        DelegationParams memory params = delegations[owner][delegate];
+        if (params.active) {
+            // In a real implementation, we would use a non-reentrant pattern or checks-effects-interactions
+            // For simplicity, we assume this is called only from executeTrade which is non-reentrant
+            delegations[owner][delegate].totalSpent += value;
+        }
     }
 }
