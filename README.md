@@ -610,7 +610,23 @@ npm start
 
 # Or run in development mode with auto-reload
 npm run dev
+
+# Start the Web UI (in another terminal)
+node src/ui/server.js
 ```
+
+### Access the Web UI
+
+Open your browser and visit:
+```
+http://localhost:3000
+```
+
+The dashboard shows:
+- 🤖 Agent status (running/paused)
+- 📜 Recent logs and activity
+- 🔗 Quick links to contract and documentation
+- 📊 AI provider status (Bankr, Gemini, DeepSeek)
 
 ---
 
