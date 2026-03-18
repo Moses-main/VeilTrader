@@ -16,6 +16,7 @@ async function main() {
       // AI APIs (Bankr primary, others free fallback)
       bankrApiKey: process.env.BANKR_API_KEY,
       geminiApiKey: process.env.GEMINI_API_KEY,
+      deepseekApiKey: process.env.DEEPSEEK_API_KEY,
       groqApiKey: process.env.GROQ_API_KEY,
       huggingFaceApiKey: process.env.HUGGINGFACE_API_KEY,
       

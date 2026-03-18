@@ -16,7 +16,7 @@ class FreeAIGateway {
     this.providers = [];
     this.currentProvider = 0;
     
-    // Initialize providers
+    // Initialize providers in order of preference
     if (config.geminiApiKey) {
       this.providers.push({
         name: 'gemini',
@@ -24,6 +24,16 @@ class FreeAIGateway {
         baseUrl: 'https://generativelanguage.googleapis.com',
         model: 'gemini-2.0-flash',
         freeTier: '500 req/day'
+      });
+    }
+    
+    if (config.deepseekApiKey) {
+      this.providers.push({
+        name: 'deepseek',
+        apiKey: config.deepseekApiKey,
+        baseUrl: 'https://api.deepseek.com',
+        model: 'deepseek-chat',
+        freeTier: 'Free tier'
       });
     }
     
@@ -81,6 +91,8 @@ class FreeAIGateway {
       switch (provider.name) {
         case 'gemini':
           return await this.callGemini(provider, prompt);
+        case 'deepseek':
+          return await this.callDeepSeek(provider, prompt);
         case 'groq':
           return await this.callGroq(provider, prompt);
         case 'huggingface':
@@ -123,6 +135,32 @@ Respond with this exact JSON format (no other text):
 
   async callGroq(provider, prompt) {
     const response = await axios.post(`${provider.baseUrl}/chat/completions`, {
+      model: provider.model,
+      messages: [{
+        role: 'system',
+        content: 'You are a DeFi trading analyst. Respond ONLY with valid JSON.'
+      }, {
+        role: 'user',
+        content: `${prompt}\n\nRespond with this exact JSON format (no other text):\n{"sentiment": "bullish|bearish|neutral", "recommendation": "BUY|SELL|HOLD", "confidence": 0.0-1.0, "reasoning": "brief explanation", "riskLevel": "low|medium|high"}`
+      }],
+      temperature: 0.3,
+      max_tokens: 500
+    }, {
+      headers: {
+        'Authorization': `Bearer ${provider.apiKey}`,
+        'Content-Type': 'application/json'
+      },
+      timeout: 30000
+    });
+
+    const text = response.data.choices?.[0]?.message?.content;
+    if (!text) return null;
+    
+    return this.parseAnalysis(text);
+  }
+
+  async callDeepSeek(provider, prompt) {
+    const response = await axios.post(`${provider.baseUrl}/v1/chat/completions`, {
       model: provider.model,
       messages: [{
         role: 'system',
