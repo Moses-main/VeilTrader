@@ -233,14 +233,12 @@ Edit `.env`:
 
 ```env
 # Required API Keys
-BANKR_API_KEY=your_bankr_key_here
-UNISWAP_API_KEY=your_uniswap_key_here
+BANKR_API_KEY=your_bankr_key_here           # https://llm.bankr.bot (add credits!)
+UNISWAP_API_KEY=your_uniswap_key_here        # https://developer.uniswap.org
 
 # Wallet (Base Sepolia testnet)
 PRIVATE_KEY=your_private_key_here
 RPC_URL=https://base-sepolia.g.alchemy.com/v2/YOUR_ALCHEMY_KEY
-
-# Chain ID
 CHAIN_ID=84532
 
 # Agent Identity (from Synthesis registration)
@@ -255,12 +253,16 @@ MAX_SLIPPAGE=0.005
 MIN_PROFIT_THRESHOLD=0.01
 RISK_TOLERANCE=medium
 
-# Extensions (optional)
-enableStETH=false
-enableStatusNetwork=false
-enableLidoMCP=false
-enableENS=false
-enableCelo=false
+# Extensions (enable by setting to true)
+ENABLE_CELO=true
+ENABLE_STETH=false
+ENABLE_STATUS_NETWORK=false
+ENABLE_LIDO_MCP=false
+ENABLE_ENS=false
+
+# Celo Configuration
+CELO_RPC_URL=https://celo-sepolia.g.alchemy.com/v2/YOUR_ALCHEMY_KEY
+CELO_AUTO_EXECUTE=true
 ```
 
 ### Deploy Smart Contract

@@ -21,11 +21,17 @@ VeilTrader is a privacy-first autonomous AI trading agent that operates on Base 
     "risk_analysis",
     "erc8004_identity",
     "uniswap_v3",
-    "multi_chain"
+    "multi_chain",
+    "cross_chain_celo",
+    "agent_services"
   ],
-  "chains": ["base", "base-sepolia"],
+  "chains": ["base", "base-sepolia", "celo-sepolia"],
   "registries": {
     "erc8004": "0x8004A818BFB912233c491871b3d84c89A494BD9e"
+  },
+  "services": {
+    "bankr": "https://llm.bankr.bot",
+    "uniswap": "https://api.uniswap.org"
   }
 }
 ```
