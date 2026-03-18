@@ -5,7 +5,7 @@
  */
 
 require('dotenv').config();
-const VeilTrader = require('./agent/VeilTrader');
+const VeilTrader = require('./execution/agent/VeilTrader');
 const logger = require('./utils/logger');
 
 async function main() {
