@@ -41,79 +41,303 @@ VeilTrader is a fully autonomous, privacy-first AI trading agent that lives on E
 
 ```mermaid
 flowchart TB
-    subgraph User["👤 User Layer"]
-        UserWallet["EOA Wallet"]
+    subgraph External["🌐 External Services"]
+        BG["🤖 Bankr LLM<br/>llm.bankr.bot"]
+        UNI["💱 Uniswap V3<br/>api.uniswap.org"]
+        ST["📦 OpenServ<br/>openserv.ai"]
+        OL["🏪 Olas<br/>olas.network"]
+    end
+
+    subgraph BaseNet["⛓️ Base Sepolia (Chain 84532)"]
+        direction TB
+        subgraph Contracts["📜 Smart Contracts"]
+            VC["🔐 VeilTrader<br/>0x0c7435..."]
+            ERC8["📋 ERC-8004<br/>0x8004A8..."]
+            ERC8R["⭐ Reputation<br/>0x8004B6..."]
+        end
+        subgraph Storage["💾 On-Chain Storage"]
+            TH["📊 Trade History"]
+            ID["🆔 Identity"]
+            REP["🏅 Reputation"]
+        end
+    end
+
+    subgraph CeloNet["🌉 Celo Sepolia (Chain 44787)"]
+        CC["🤖 Celo Contract"]
+        CELO["💰 CELO/cUSD"]
     end
 
     subgraph Agent["🤖 VeilTrader Agent"]
         direction TB
-        PA[Portfolio Analyzer]
-        RE[Risk Engine]
-        DE[Decision Engine]
-        UE[Uniswap Executor]
-        IR[Identity Registry]
+        subgraph Analysis["📊 Analysis Layer"]
+            PA["💼 Portfolio Analyzer"]
+            RE["⚖️ Risk Engine"]
+            DE["🎯 Decision Engine"]
+        end
+
+        subgraph Execution["⚡ Execution Layer"]
+            UE["💱 Uniswap Executor"]
+            CE["🔄 Celo Executor"]
+            STX["📦 Storage Executor"]
+        end
+
+        subgraph Identity["🔑 Identity Layer"]
+            IR["📋 Identity Registry"]
+            PROOF["🔐 ZK Proofs"]
+        end
     end
 
-    subgraph External["🔗 External Services"]
-        BG["Bankr LLM Gateway"]
-        UNI["Uniswap V3"]
-        Base["Base Network"]
+    subgraph Storage["📦 Decentralized Storage"]
+        STORACHA["🗄️ Storacha<br/>z6MkrVM..."]
+        IPFS["🪐 IPFS/Filecoin"]
     end
 
-    subgraph OnChain["⛓️ On-Chain"]
-        VC[VeilTrader Contract]
-        ERC[ERC-8004 Registry]
+    %% External to Agent
+    BG <-->|"AI Analysis"| DE
+    UNI <-->|"Quotes & Swaps"| UE
+
+    %% Agent to Base
+    UE <-->|"Execute & Log"| VC
+    IR <-->|"Register & Update"| ERC8
+    IR <-->|"Reputation"| ERC8R
+
+    %% Contract internals
+    VC --> TH
+    VC --> ID
+    ERC8 --> REP
+
+    %% Celo integration
+    CE <-->|"Cross-Chain"| CeloNet
+    CC <-->|"CELO Trading"| CELO
+
+    %% Storage
+    STX <-->|"Trade History"| STORACHA
+    STX <-->|"Metadata"| IPFS
+
+    %% OpenServ
+    ST <-->|"Agent Services"| Agent
+
+    %% Style
+    style Agent fill:#1a1a2e,color:#fff
+    style BaseNet fill:#0044cc,color:#fff
+    style External fill:#ff6b35,color:#fff
+    style CeloNet fill:#fbcc33,color:#000
+    style Storage fill:#00d4aa,color:#000
+```
+
+### Complete Trading Decision Flow
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant User as 👤 User
+    participant Agent as 🤖 VeilTrader
+    participant PA as 📊 Portfolio<br/>Analyzer
+    participant BG as 🤖 Bankr LLM
+    participant DE as 🎯 Decision<br/>Engine
+    participant RE as ⚖️ Risk<br/>Engine
+    participant UE as 💱 Uniswap<br/>Executor
+    participant VC as 🔐 VeilTrader<br/>Contract
+    participant ERC8 as 📋 ERC-8004<br/>Registry
+
+    rect rgb(30, 30, 50)
+        Note over User,ERC8: 🔄 TRADING CYCLE (Every 5 minutes)
+        
+        Agent->>PA: 1. Analyze Portfolio
+        PA->>Agent: Portfolio Data
+        
+        Agent->>BG: 2. Request AI Analysis
+        BG->>Agent: Trading Recommendation
+        
+        Agent->>DE: 3. Make Decision
+        DE->>DE: Evaluate Options
+        
+        alt ✅ Trade Recommended
+            Agent->>RE: 4. Risk Assessment
+            RE->>Agent: Risk Report
+            
+            alt ✅ Risk Approved
+                Agent->>UE: 5. Execute Trade
+                UE->>VC: Submit Transaction
+                VC-->>UE: Tx Receipt
+                UE-->>Agent: Execution Result
+                
+                Agent->>VC: 6. Log Trade On-Chain
+                Agent->>ERC8: 7. Update Identity
+                
+                Note over Agent,ERC8: ✅ Trade Complete
+            else ❌ Risk Rejected
+                Agent->>Agent: Switch to HOLD
+                Note over Agent: 🛡️ Risk Guard Activated
+            end
+        else ⏸️ No Trade
+            Agent->>VC: Log HOLD Decision
+            Note over Agent: ⏸️ No Action Taken
+        end
     end
 
-    UserWallet -->|"1. Deposit Funds"| PA
-    PA -->|"2. Portfolio Data"| BG
-    BG -->|"3. AI Analysis"| DE
-    DE -->|"4. Trade Decision"| RE
-    RE -->|"5. Risk Check"| UE
-    UE -->|"6. Execute Swap"| UNI
-    UNI -->|"7. On-Chain Tx"| Base
-    UE -->|"8. Log Action"| IR
-    IR -->|"9. Update Identity"| ERC
-    UE -->|"10. Store History"| VC
+    rect rgb(50, 20, 20)
+        Note over User,ERC8: 📈 EXTENSION CYCLE
+        Agent->>Agent: Check Celo Opportunities
+        Agent->>Agent: Check OpenServ Services
+        Agent->>Agent: Update Filecoin Storage
+    end
+```
+
+### Cross-Chain Architecture
+
+```mermaid
+flowchart LR
+    subgraph Base["⛓️ Base Sepolia"]
+        direction TB
+        B1["💰 ETH/USDC"]
+        B2["🔐 VeilTrader Contract"]
+        B3["📋 ERC-8004 Identity"]
+        B4["⭐ Reputation System"]
+    end
+
+    subgraph Celo["🌉 Celo Sepolia"]
+        direction TB
+        C1["💰 CELO/cUSD"]
+        C2["🤖 Celo Executor"]
+        C3["🌉 Mento Bridge"]
+    end
+
+    subgraph Storage["📦 Decentralized"]
+        direction TB
+        S1["🗄️ Storacha"]
+        S2["🪐 IPFS/Filecoin"]
+    end
+
+    subgraph Services["🔗 External"]
+        direction TB
+        SV1["🤖 Bankr LLM"]
+        SV2["💱 Uniswap V3"]
+        SV3["📦 OpenServ"]
+    end
+
+    B1 <-->|"Bridge"| C1
+    B2 <-->|"Log Trades"| B3
+    B3 <-->|"Build Reputation"| B4
+    
+    C2 -->|"Execute"| C1
+    C2 -->|"Bridge Back"| B1
+    
+    B2 -->|"Store History"| S1
+    B2 -->|"IPFS Metadata"| S2
+    
+    SV1 -->|"AI Analysis"| B2
+    SV2 -->|"DEX Swaps"| B2
+    SV3 -->|"Discover Services"| B2
+
+    style Base fill:#0044cc,color:#fff
+    style Celo fill:#fbcc33,color:#000
+    style Storage fill:#00d4aa,color:#000
+    style Services fill:#ff6b35,color:#fff
 ```
 
 ### Component Architecture
 
 ```mermaid
-flowchart LR
-    subgraph Core["Core Agent"]
-        VT[VeilTrader.js]
+flowchart TB
+    subgraph VeilTrader["🤖 VeilTrader Agent"]
+        direction TB
+        
+        subgraph Core["⚙️ Core Engine"]
+            VT["🎛️ VeilTrader.js<br/>Main Orchestrator"]
+            CFG["⚙️ Configuration<br/>.env loader"]
+        end
+
+        subgraph AnalysisLayer["📊 Analysis Layer"]
+            PA["💼 Portfolio Analyzer<br/>Fetches balances & values"]
+            RE["⚖️ Risk Engine<br/>Evaluates risk level"]
+            DE["🎯 Decision Engine<br/>Makes trading decisions"]
+        end
+
+        subgraph ExecutionLayer["⚡ Execution Layer"]
+            UE["💱 Uniswap Executor<br/>Executes V3 swaps"]
+            CE["🌉 Celo Executor<br/>Cross-chain trades"]
+            STX["📦 Storage Executor<br/>Filecoin/Storacha"]
+        end
+
+        subgraph IdentityLayer["🔑 Identity Layer"]
+            IR["📋 Identity Registry<br/>ERC-8004 integration"]
+            PROOF["🔐 ZK Proofs<br/>Self Protocol"]
+            Locus["💸 Locus Payments<br/>Agent-native payments"]
+        end
+
+        subgraph ServiceLayer["🌐 External Services"]
+            BG["🤖 Bankr Gateway<br/>LLM inference"]
+            META["🛡️ MetaMask<br/>Delegations"]
+            OPENSERV["📦 OpenServ<br/>x402 services"]
+        end
     end
 
-    subgraph Analysis["Analysis Layer"]
-        PA[PortfolioAnalyzer]
-        RE[RiskEngine]
-        DE[DecisionEngine]
-    end
+    VT --> CFG
+    VT --> AnalysisLayer
+    VT --> ExecutionLayer
+    VT --> IdentityLayer
+    VT --> ServiceLayer
 
-    subgraph Execution["Execution Layer"]
-        UE[UniswapExecutor]
-        IR[IdentityRegistry]
-    end
-
-    subgraph Services["Service Layer"]
-        BG[BankrGateway]
-        Logger[Logger]
-    end
-
-    VT --> PA
-    VT --> RE
-    VT --> DE
-    VT --> UE
-    VT --> IR
-    VT --> BG
-    VT --> Logger
-
-    PA -->|"Portfolio Data"| DE
+    AnalysisLayer -->|"Analysis"| DE
     DE -->|"Decision"| RE
     RE -->|"Approved"| UE
-    UE -->|"Tx Receipt"| IR
-    BG -->|"AI Analysis"| DE
+    UE -->|"Swap"| META
+
+    style VeilTrader fill:#1a1a2e,color:#fff
+    style Core fill:#16213e,color:#fff
+    style AnalysisLayer fill:#0f3460,color:#fff
+    style ExecutionLayer fill:#533483,color:#fff
+    style IdentityLayer fill:#e94560,color:#fff
+    style ServiceLayer fill:#ff6b35,color:#fff
+```
+
+### Agent-to-Agent Communication
+
+```mermaid
+flowchart TB
+    subgraph OtherAgents["🤖 Other AI Agents"]
+        OA1["DeFi Agent A"]
+        OA2["Trading Agent B"]
+        OA3["Research Agent C"]
+    end
+
+    subgraph VeilTraderAPI["🔌 VeilTrader API"]
+        API1["GET /status"]
+        API2["POST /trade"]
+        API3["GET /portfolio"]
+        API4["GET /history"]
+    end
+
+    subgraph MCP["📡 MCP Server"]
+        MCP1["get_status"]
+        MCP2["execute_trade"]
+        MCP3["get_portfolio"]
+        MCP4["get_trade_history"]
+    end
+
+    subgraph Contracts["⛓️ On-Chain Discovery"]
+        ERC8004["📋 ERC-8004<br/>Identity Registry"]
+        OLAS["🏪 Olas<br/>Agent Marketplace"]
+    end
+
+    OA1 -->|"REST API"| API1
+    OA2 -->|"MCP Protocol"| MCP2
+    OA3 -->|"Query"| API3
+
+    API1 --> MCP1
+    API2 --> MCP2
+    API3 --> MCP3
+
+    VeilTraderAPI --> ERC8004
+    MCP --> ERC8004
+
+    OLAS -->|"Discover"| VeilTraderAPI
+
+    style VeilTraderAPI fill:#0044cc,color:#fff
+    style MCP fill:#00d4aa,color:#000
+    style OtherAgents fill:#ff6b35,color:#fff
+    style Contracts fill:#533483,color:#fff
 ```
 
 ## 🔄 System Flow
@@ -122,61 +346,157 @@ flowchart LR
 
 ```mermaid
 sequenceDiagram
-    participant User as User
-    participant Agent as VeilTrader
-    participant Bankr as Bankr Gateway
-    participant Risk as Risk Engine
-    participant Uniswap as Uniswap V3
-    participant Chain as Base Network
-    participant Registry as ERC-8004
+    autonumber
+    participant User as 👤 User
+    participant Agent as 🤖 VeilTrader
+    participant PA as 📊 Portfolio<br/>Analyzer
+    participant BG as 🤖 Bankr LLM
+    participant DE as 🎯 Decision<br/>Engine
+    participant RE as ⚖️ Risk<br/>Engine
+    participant UE as 💱 Uniswap<br/>V3
+    participant VC as 🔐 VeilTrader<br/>Contract
+    participant ERC8 as 📋 ERC-8004<br/>Registry
 
-    loop Every 5 Minutes
-        Agent->>Agent: Analyze Portfolio
-        Agent->>Bankr: Request AI Analysis
-        Bankr-->>Agent: Trading Recommendation
-        Agent->>Risk: Evaluate Risk
-        Risk-->>Agent: Risk Assessment
+    loop Every 5 Minutes (Configurable)
+        Agent->>PA: 1. Analyze Portfolio
+        PA-->>Agent: Portfolio Data
         
-        alt Trade Approved
-            Agent->>Uniswap: Execute Swap
-            Uniswap->>Chain: Submit Transaction
-            Chain-->>Uniswap: Tx Receipt
-            Uniswap-->>Agent: Execution Result
-            Agent->>Registry: Log Action On-Chain
-            Registry-->>Agent: Confirmation
-        else Trade Rejected
-            Agent->>Registry: Log HOLD Decision
+        Agent->>BG: 2. Get AI Analysis
+        BG-->>Agent: Trading Signal
+        
+        Agent->>DE: 3. Make Decision
+        DE-->>Agent: Action: BUY/SELL/HOLD
+        
+        alt Action = BUY or SELL
+            Agent->>RE: 4. Risk Check
+            RE-->>Agent: Risk Assessment
+            
+            alt Risk = APPROVED
+                Agent->>UE: 5. Execute Swap
+                UE-->>Agent: Tx Receipt
+                
+                Agent->>VC: 6. Log Trade
+                VC-->>Agent: Confirmed
+                
+                Agent->>ERC8: 7. Update Reputation
+                ERC8-->>Agent: Reputation Updated
+            else Risk = REJECTED
+                Agent->>Agent: Switch to HOLD
+            end
+        else Action = HOLD
+            Agent->>VC: Log HOLD Decision
         end
+        
+        Note over Agent: ✅ Cycle Complete
     end
 ```
 
-### Decision Flow
+### Decision Flow (Detailed)
 
 ```mermaid
 flowchart TD
-    A[Start Cycle] --> B[Analyze Portfolio]
-    B --> C[Get AI Analysis from Bankr]
-    C --> D{AI Recommendation?}
+    START([🚀 Start Cycle]) --> ANALYZE[📊 Analyze Portfolio]
     
-    D -->|HOLD| E[Log HOLD Action]
-    D -->|BUY/SELL| F[Calculate Trade Amount]
+    ANALYZE --> AI[🤖 Get AI Analysis<br/>from Bankr]
     
-    F --> G[Risk Assessment]
-    G --> H{Risk Approved?}
+    AI --> DECIDE{Decision?}
     
-    H -->|NO| I[Switch to HOLD]
-    H -->|YES| J[Execute Trade]
+    DECIDE -->|HOLD| HOLD_LOG[📝 Log HOLD<br/>to Contract]
+    HOLD_LOG --> END
     
-    J --> K[Submit to Uniswap]
-    K --> L[Wait for Confirmation]
-    L --> M[Update ERC-8004]
+    DECIDE -->|BUY/SELL| CALC[📐 Calculate<br/>Trade Amount]
     
-    E --> N[End Cycle]
-    I --> N
-    M --> N
+    CALC --> RISK{⚖️ Risk Check}
     
-    N --> O[Wait 5 Minutes]
-    O --> A
+    RISK -->|LOW RISK| EXEC[⚡ Execute Trade]
+    RISK -->|HIGH RISK| REJECT[🛡️ Reject Trade]
+    
+    REJECT --> HOLD[⏸️ Switch to HOLD]
+    HOLD --> HOLD_LOG2[📝 Log HOLD]
+    HOLD_LOG2 --> END
+    
+    EXEC --> UNISWAP[💱 Submit to Uniswap]
+    UNISWAP --> CONFIRM{✅ Confirmed?}
+    
+    CONFIRM -->|YES| ONCHAIN[⛓️ Log to Contract]
+    CONFIRM -->|NO| RETRY[🔄 Retry?<br/>Max 3]
+    
+    RETRY -->|YES| EXEC
+    RETRY -->|NO| FAIL[❌ Log Failure]
+    FAIL --> END
+    
+    ONCHAIN --> ERC8004[📋 Update ERC-8004]
+    ERC8004 --> CELO{🌉 Celo<br/>Enabled?}
+    
+    CELO -->|YES| CELO_CHECK[🔍 Check Celo<br/>Opportunities]
+    CELO_CHECK --> CELO_EXEC[🌉 Execute Celo<br/>Trade]
+    CELO_EXEC --> STORAGE[📦 Store History]
+    
+    CELO -->|NO| STORAGE
+    
+    STORAGE --> END([✅ Cycle Complete])
+    
+    STORAGE --> WAIT[⏳ Wait 5 min]
+    WAIT --> START
+    
+    %% Styling
+    style START fill:#00d4aa,color:#000
+    style END fill:#00d4aa,color:#000
+    style EXEC fill:#0044cc,color:#fff
+    style HOLD fill:#fbcc33,color:#000
+    style REJECT fill:#e94560,color:#fff
+    style CELO fill:#fbcc33,color:#000
+```
+
+### Cross-Chain Flow
+
+```mermaid
+flowchart TB
+    subgraph Base["⛓️ Base Sepolia"]
+        B_START[📊 Start Cycle]
+        B_ANALYZE[🤖 AI Analysis]
+        B_DECIDE[🎯 Make Decision]
+        B_TRADE[💱 Execute Uniswap]
+        B_LOG[⛓️ Log to Contract]
+    end
+
+    subgraph ERC8004["📋 ERC-8004 Identity"]
+        E_REGISTER[🆔 Register Identity]
+        E_UPDATE[⭐ Update Reputation]
+        E_PROOF[🔐 Submit ZK Proof]
+    end
+
+    subgraph Celo["🌉 Celo Sepolia"]
+        C_CHECK{🌉 Check Celo<br/>Opportunities?}
+        C_BALANCE[💰 Check CELO<br/>Balance]
+        C_TRADE[💱 Swap CELO<br/>→ cUSD]
+        C_BRIDGE[🌉 Bridge to<br/>Base]
+    end
+
+    subgraph Storage["📦 Decentralized Storage"]
+        S_STORACHA[🗄️ Storacha<br/>Trade History]
+        S_IPFS[🪐 IPFS<br/>Metadata]
+    end
+
+    B_START --> B_ANALYZE
+    B_ANALYZE --> B_DECIDE
+    B_DECIDE --> B_TRADE
+    B_TRADE --> B_LOG
+    B_LOG --> E_REGISTER
+    E_REGISTER --> E_UPDATE
+    E_UPDATE --> E_PROOF
+    E_PROOF --> C_CHECK
+    C_CHECK -->|Yes| C_BALANCE
+    C_BALANCE --> C_TRADE
+    C_TRADE --> C_BRIDGE
+    C_BRIDGE --> S_STORACHA
+    C_CHECK -->|No| S_STORACHA
+    S_STORACHA --> S_IPFS
+    
+    style Base fill:#0044cc,color:#fff
+    style ERC8004 fill:#e94560,color:#fff
+    style Celo fill:#fbcc33,color:#000
+    style Storage fill:#00d4aa,color:#000
 ```
 
 ## ✨ Features
