@@ -238,16 +238,29 @@ UNISWAP_API_KEY=your_uniswap_key_here
 
 # Wallet (Base Sepolia testnet)
 PRIVATE_KEY=your_private_key_here
-RPC_URL=https://sepolia.base.org
+RPC_URL=https://base-sepolia.g.alchemy.com/v2/YOUR_ALCHEMY_KEY
+
+# Chain ID
+CHAIN_ID=84532
 
 # Agent Identity (from Synthesis registration)
 AGENT_ID=587a0768c387481aa3eee090644cbe77
 TEAM_ID=b384a9348bf944a684deae5dcc2a0f28
 
+# Contract Addresses
+VEILTRADER_CONTRACT=0x0c7435e863D3a3365FEbe06F34F95f4120f71114
+
 # Risk Parameters
 MAX_SLIPPAGE=0.005
 MIN_PROFIT_THRESHOLD=0.01
 RISK_TOLERANCE=medium
+
+# Extensions (optional)
+enableStETH=false
+enableStatusNetwork=false
+enableLidoMCP=false
+enableENS=false
+enableCelo=false
 ```
 
 ### Deploy Smart Contract
@@ -260,10 +273,8 @@ forge install foundry-rs/forge-std
 forge script script/Deploy.s.sol --rpc-url baseSepolia --broadcast --verify
 
 # Update .env with deployed contract address
-VEILTRADER_CONTRACT=0x44A8c4cabaE932445eBD1607238b0FEe6f480ff3
+VEILTRADER_CONTRACT=0x0c7435e863D3a3365FEbe06F34F95f4120f71114
 ```
-
-**Deployed Contract:** [0x44A8c4cabaE932445eBD1607238b0FEe6f480ff3](https://base-sepolia.blockscout.com/address/0x44A8c4cabaE932445eBD1607238b0FEe6f480ff3)
 
 ### Run the Agent
 
@@ -275,8 +286,189 @@ npm start
 npm run dev
 ```
 
+---
+
+## 🤖 For AI Agents
+
+VeilTrader can be controlled by other AI agents via its API. Here's how to use it:
+
+### Agent-to-Agent Communication
+
+```javascript
+// Example: Call VeilTrader from another agent
+const response = await fetch('http://localhost:3000/api/status');
+const status = await response.json();
+
+// Execute a trade request
+const tradeResult = await fetch('http://localhost:3000/api/trade', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    action: 'BUY',
+    targetAsset: 'WETH',
+    amount: 0.01
+  })
+});
+```
+
+### MCP Server
+
+VeilTrader exposes an MCP (Model Context Protocol) server for seamless agent integration:
+
+```json
+{
+  "name": "veiltrader",
+  "description": "Privacy-first autonomous trading agent",
+  "tools": [
+    {
+      "name": "get_status",
+      "description": "Get VeilTrader agent status",
+      "input_schema": { "type": "object", "properties": {} }
+    },
+    {
+      "name": "execute_trade",
+      "description": "Request a trade execution",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "action": { "type": "string", "enum": ["BUY", "SELL"] },
+          "targetAsset": { "type": "string" },
+          "amount": { "type": "number" }
+        },
+        "required": ["action", "targetAsset", "amount"]
+      }
+    },
+    {
+      "name": "get_portfolio",
+      "description": "Get current portfolio analysis",
+      "input_schema": { "type": "object", "properties": {} }
+    },
+    {
+      "name": "get_trade_history",
+      "description": "Get on-chain trade history",
+      "input_schema": { "type": "object", "properties": {} }
+    }
+  ]
+}
+```
+
+### Skill File
+
+VeilTrader can be used as a skill by other AI agents. Include in your agent's skill file:
+
+```yaml
+name: veiltrader
+description: Privacy-first autonomous AI trading agent on Base
+capabilities:
+  - defi_trading
+  - portfolio_management
+  - risk_analysis
+  - erc8004_identity
+endpoints:
+  status: /api/status
+  trade: /api/trade
+  portfolio: /api/portfolio
+```
+
+---
+
+## 👤 For Humans
+
+### Monitoring Your Agent
+
+```bash
+# View real-time logs
+tail -f logs/combined.log
+
+# View error logs
+tail -f logs/error.log
+
+# Check agent status
+curl http://localhost:3000/api/status
+```
+
+### Managing Trades
+
+1. **Check Portfolio**: Visit the agent's dashboard or call `/api/portfolio`
+2. **Review Trades**: All trades are recorded on-chain at `VEILTRADER_CONTRACT`
+3. **Withdraw Funds**: Access your wallet directly - the agent doesn't hold funds
+
+### Risk Management
+
+The agent uses configurable risk parameters:
+
+| Parameter | Default | Description |
+|-----------|---------|-------------|
+| `MAX_SLIPPAGE` | 0.5% | Maximum slippage tolerance |
+| `MIN_PROFIT_THRESHOLD` | 1% | Minimum profit before execution |
+| `RISK_TOLERANCE` | medium | low, medium, or high |
+
+### Stopping the Agent
+
+```bash
+# Stop the agent
+pkill -f "node src/index.js"
+
+# Or use the API
+curl -X POST http://localhost:3000/api/stop
+```
+
+---
+
 ## 📁 Project Structure
 
+```
+veiltrader/
+├── 📄 README.md                 # This file
+├── 📄 LICENSE                   # MIT License
+├── 📄 CONTRIBUTING.md           # Contribution guidelines
+├── 📄 SUPPORT.md                # Support & troubleshooting
+├── 📄 SKILL.md                  # Agent skill file
+│
+├── 📁 src/                      # Source code
+│   ├── 📁 agent/                # Core agent
+│   │   └── VeilTrader.js        # Main orchestrator
+│   ├── 📁 analysis/             # Analysis modules
+│   │   ├── PortfolioAnalyzer.js # Portfolio analysis
+│   │   ├── RiskEngine.js        # Risk assessment
+│   │   └── DecisionEngine.js     # Trading decisions
+│   ├── 📁 execution/            # Trade execution
+│   │   ├── UniswapExecutor.js   # Uniswap V3 integration
+│   │   └── VeilTraderContract.js # Contract interface
+│   ├── 📁 identity/             # On-chain identity
+│   │   └── IdentityRegistry.js   # ERC-8004 registry
+│   ├── 📁 services/             # External services
+│   │   └── BankrGateway.js      # Bankr LLM integration
+│   ├── 📁 extensions/            # Extension modules
+│   │   ├── StETHTreasury.js     # stETH yield management
+│   │   ├── StatusNetwork.js     # Gasless transactions
+│   │   ├── OlasMarketplace.js   # Olas integration
+│   │   ├── LidoMCP.js          # Lido MCP server
+│   │   ├── OpenServ.js          # OpenServ x402
+│   │   ├── FilecoinStorage.js   # IPFS storage
+│   │   ├── ENSIntegration.js   # ENS identity
+│   │   └── CeloIntegration.js   # Celo network
+│   ├── 📁 utils/                # Utilities
+│   │   └── logger.js            # Logging
+│   └── index.js                 # Entry point
+│
+├── 📁 contracts/                # Smart contracts (Foundry)
+│   └── VeilTrader.sol           # Trade history + ERC-8004 + Delegations + Locus + Self ID
+│
+├── 📁 script/                   # Foundry deployment scripts
+│   └── Deploy.s.sol              # Contract deployment
+│
+├── 📁 test/                     # Foundry tests
+│   └── VeilTrader.t.sol          # 29 contract tests
+│
+├── 📁 docs/                     # Additional documentation
+│   ├── ARCHITECTURE.md          # Detailed architecture
+│   ├── API.md                   # API reference
+│   └── SECURITY.md              # Security considerations
+│
+├── ⚙️ foundry.toml            # Foundry configuration
+├── 📦 package.json              # Dependencies
+└── 🔒 .env                     # Environment variables
 ```
 veiltrader/
 ├── 📄 README.md                 # This file
