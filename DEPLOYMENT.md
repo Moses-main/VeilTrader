@@ -4,199 +4,52 @@ This guide covers deploying VeilTrader to **Vercel** (frontend) and **Render** (
 
 ---
 
-## Architecture Overview
+## Architecture
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │                     VERCEL (Frontend)                       │
-│  ┌──────────────┐  ┌──────────────┐  ┌─────────────────┐   │
-│  │   Dashboard  │  │  Trade UI    │  │  API Routes     │   │
-│  │   (HTML/CSS) │  │  (JS/Web3)   │  │  (Serverless)   │   │
-│  └──────────────┘  └──────────────┘  └─────────────────┘   │
-│                                                             │
-│  URL: veiltrader.vercel.app                                 │
+│  • Vite + Tailwind CSS build                                 │
+│  • Static deployment                                         │
+│  • URL: veiltrader.vercel.app                                │
 └─────────────────────────────────────────────────────────────┘
                             │
                             ▼
 ┌─────────────────────────────────────────────────────────────┐
-│                     RENDER (Backend API)                    │
-│  ┌──────────────────────────────────────────────────────┐  │
-│  │            API Server (Node.js/Express)              │  │
-│  │  • Trade execution logic                             │  │
-│  │  • AI analysis endpoints                             │  │
-│  │  • WebSocket server                                  │  │
-│  └──────────────────────────────────────────────────────┘  │
-│                                                             │
-│  URL: veiltrader-api.onrender.com                           │
-└─────────────────────────────────────────────────────────────┘
-                            │
-                            ▼
-┌─────────────────────────────────────────────────────────────┐
-│                    BASE SEPOLIA (Chain)                     │
-│  ┌──────────────────────────────────────────────────────┐  │
-│  │          VeilTrader Smart Contract                   │  │
-│  │  0x0c7435e863D3a3365FEbe06F34F95f4120f71114          │  │
-│  └──────────────────────────────────────────────────────┘  │
+│                     BASE SEPOLIA (Chain)                    │
+│  • Contract: 0x0c7435e863D3a3365FEbe06F34F95f4120f71114      │
+│  • All trades on-chain with ERC-8004 identity                │
 └─────────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-## Prerequisites
+## Frontend Deployment (Vercel)
 
-1. **GitHub Account** - Repository at `Moses-main/VeilTrader`
-2. **Vercel Account** - For frontend deployment
-3. **Render Account** - For backend API (optional)
-4. **API Keys** - From services listed below
+### Step 1: Connect Repository
 
----
+1. Go to [vercel.com](https://vercel.com)
+2. Sign in with GitHub
+3. Click **"Add New..."** → **"Project"**
+4. Select **"Import Git Repository"**
+5. Choose `Moses-main/VeilTrader`
 
-## Step 1: Prepare API Keys
+### Step 2: Configure Project
 
-### Free AI APIs (Recommended for Dev)
-| Service | URL | Free Tier |
-|---------|-----|-----------|
-| Google Gemini | [aistudio.google.com](https://aistudio.google.com/app/apikey) | 500 req/day |
-| Groq | [console.groq.com](https://console.groq.com/keys) | Unlimited |
-| Hugging Face | [huggingface.co](https://huggingface.co/settings/inference) | Free tier |
-
-### Trading API (Required)
-| Service | URL | Notes |
-|---------|-----|-------|
-| Uniswap | [developer.uniswap.org](https://developer.uniswap.org) | Free tier available |
-
-### Optional Integration APIs
-| Service | URL | Prize Track |
-|---------|-----|-------------|
-| Venice.ai | [venice.ai](https://venice.ai) | Private Agents |
-| Virtuals | [docs.virtuals.io](https://docs.virtuals.io) | Best Virtuals Use |
-| Lit Protocol | [litprotocol.com](https://developer.litprotocol.com) | Best Lit Use |
-| Slice | [slicefinance.xyz](https://slicefinance.xyz/developers) | Best Slice Use |
-| Self.xyz | [docs.self.xyz](https://docs.self.xyz) | Best Self Use |
-| Octant | [docs.octant.app](https://docs.octant.app) | Best Octant Use |
-
----
-
-## Step 2: Deploy Frontend to Vercel
-
-### Option A: Vercel Dashboard (Recommended)
-
-1. **Go to Vercel Dashboard**
-   - Visit [vercel.com](https://vercel.com)
-   - Sign in with GitHub
-
-2. **Add New Project**
-   - Click **"Add New..."** → **"Project"**
-   - Select **"Import Git Repository"**
-   - Choose `Moses-main/VeilTrader`
-
-3. **Configure Project**
-   ```
-   Project Name: veiltrader
-   Framework Preset: Other
-   Build Command: (leave empty or use: npm run build:ui)
-   Output Directory: (leave empty)
-   Install Command: npm install
-   ```
-
-4. **Add Environment Variables**
-   Click **"Environment Variables"** and add:
-
-   ```
-   NODE_ENV=production
-   RPC_URL=https://sepolia.base.org
-   CHAIN_ID=84532
-   VEILTRADER_CONTRACT=0x0c7435e863D3a3365FEbe06F34F95f4120f71114
-   ERC8004_REGISTRY=0x8004A818BFB912233c491871b3d84c89A494BD9e
-   ERC8004_REPUTATION_REGISTRY=0x8004B663056A597Dffe9eCcC1965A193B7388713
-   GEMINI_API_KEY=your_gemini_api_key_here
-   GROQ_API_KEY=your_groq_api_key_here
-   UNISWAP_API_KEY=your_uniswap_api_key_here
-   MIN_CONFIDENCE=0.5
-   MAX_SLIPPAGE=0.005
-   ```
-
-5. **Deploy**
-   - Click **"Deploy"**
-   - Wait for deployment to complete
-   - Your app will be live at `https://veiltrader.vercel.app`
-
-### Option B: Vercel CLI
-
-```bash
-# Install Vercel CLI
-npm i -g vercel
-
-# Login
-vercel login
-
-# Deploy
-vercel
-
-# Follow prompts:
-# - Set up project? Yes
-# - Link to existing project? No
-# - Project name: veiltrader
-# - Framework: Other
+```
+Project Name: veiltrader
+Framework Preset: Vite
+Build Command: cd ui && npm run build
+Output Directory: ui/dist
+Install Command: cd ui && npm install
 ```
 
-### Option C: GitHub Integration
+### Step 3: Environment Variables
 
-1. Install Vercel app on GitHub
-2. Import repository from GitHub
-3. Automatic deploys on every push
+Add these to **Project Settings → Environment Variables**:
 
----
-
-## Step 3: Deploy Backend to Render (Optional)
-
-> **Note:** The UI server (`src/ui/server.js`) can run on Vercel alone.
-> Use Render if you need a dedicated API server.
-
-### Option A: Render Dashboard
-
-1. **Go to Render Dashboard**
-   - Visit [render.com](https://render.com)
-   - Sign in with GitHub
-
-2. **Create New Web Service**
-   - Click **"New"** → **"Web Service"**
-   - Connect your GitHub repository
-
-3. **Configure Service**
-   ```
-   Name: veiltrader-api
-   Environment: Node
-   Build Command: npm install
-   Start Command: node src/ui/server.js
-   Instance Type: Starter (Free tier)
-   ```
-
-4. **Add Environment Variables**
-   Add the variables from `.env.render` through the Render dashboard UI.
-
-5. **Deploy**
-   - Click **"Create Web Service"**
-   - Wait for build to complete
-   - Your API will be live at `https://veiltrader-api.onrender.com`
-
-### Option B: Render Blueprint
-
-1. Use the `render.yaml` file in repository
-2. Connect to GitHub
-3. Render will automatically configure the service
-
----
-
-## Environment Variables Summary
-
-### For Vercel (Frontend)
 ```
 # Core Settings
-NODE_ENV=production
-PORT=3000
-
-# Blockchain
 RPC_URL=https://sepolia.base.org
 CHAIN_ID=84532
 VEILTRADER_CONTRACT=0x0c7435e863D3a3365FEbe06F34F95f4120f71114
@@ -204,76 +57,110 @@ ERC8004_REGISTRY=0x8004A818BFB912233c491871b3d84c89A494BD9e
 ERC8004_REPUTATION_REGISTRY=0x8004B663056A597Dffe9eCcC1965A193B7388713
 
 # AI APIs (Free Options)
-GEMINI_API_KEY=your_gemini_api_key
-GROQ_API_KEY=your_groq_api_key
-HUGGINGFACE_API_KEY=your_huggingface_api_key
+GEMINI_API_KEY=your_gemini_api_key_here
+GROQ_API_KEY=your_groq_api_key_here
 
 # Trading API
-UNISWAP_API_KEY=your_uniswap_api_key
+UNISWAP_API_KEY=your_uniswap_api_key_here
 
 # Risk Parameters
-MIN_CONFIDENCE=0.5
 MAX_SLIPPAGE=0.005
 MIN_PROFIT_THRESHOLD=0.01
-CYCLE_INTERVAL=15
-
-# Optional Integrations
-VENICE_API_KEY=your_venice_api_key
-VIRTUALS_API_KEY=your_virtuals_api_key
-SLICE_API_KEY=your_slice_api_key
-SELF_API_KEY=your_self_api_key
-OCTANT_API_KEY=your_octant_api_key
-ENS_API_KEY=your_ens_api_key
-FILECOIN_API_KEY=your_filecoin_api_key
-OPENSERV_API_KEY=your_openserv_api_key
-OLAS_API_KEY=your_olas_api_key
+RISK_TOLERANCE=low
+MIN_CONFIDENCE=0.5
 ```
 
-### For Render (Backend)
+### Step 4: Deploy
+
+Click **"Deploy"** and wait for deployment to complete.
+
+---
+
+## Environment Variables
+
+### For Vercel (Frontend)
+
+| Variable | Value | Required |
+|----------|-------|----------|
+| RPC_URL | `https://sepolia.base.org` | ✅ Yes |
+| CHAIN_ID | `84532` | ✅ Yes |
+| VEILTRADER_CONTRACT | `0x0c7435e863D3a3365FEbe06F34F95f4120f71114` | ✅ Yes |
+| GEMINI_API_KEY | `your_gemini_key` | Optional |
+| GROQ_API_KEY | `your_groq_key` | Optional |
+| UNISWAP_API_KEY | `your_uniswap_key` | Optional |
+| MAX_SLIPPAGE | `0.005` | ✅ Yes |
+| MIN_CONFIDENCE | `0.5` | ✅ Yes |
+
+### For Render (Backend - Optional)
+
+| Variable | Value | Required |
+|----------|-------|----------|
+| PORT | `10000` | ✅ Yes |
+| NODE_ENV | `production` | ✅ Yes |
+| RPC_URL | `https://sepolia.base.org` | ✅ Yes |
+| CHAIN_ID | `84532` | ✅ Yes |
+| GEMINI_API_KEY | `your_gemini_key` | Optional |
+| UNISWAP_API_KEY | `your_uniswap_key` | Optional |
+
+---
+
+## Building Locally
+
+```bash
+# Install dependencies
+cd ui
+npm install
+
+# Start development server
+npm run dev
+
+# Build for production
+npm run build
+
+# Preview production build
+npm run preview
 ```
-# Core Settings
-PORT=10000
-NODE_ENV=production
 
-# Blockchain (Same as Vercel)
-RPC_URL=https://sepolia.base.org
-CHAIN_ID=84532
-VEILTRADER_CONTRACT=0x0c7435e863D3a3365FEbe06F34F95f4120f71114
-ERC8004_REGISTRY=0x8004A818BFB912233c491871b3d84c89A494BD9e
-ERC8004_REPUTATION_REGISTRY=0x8004B663056A597Dffe9eCcC1965A193B7388713
+## Project Structure
 
-# API Keys (Add via Render dashboard)
-GEMINI_API_KEY=your_gemini_api_key
-GROQ_API_KEY=your_groq_api_key
-UNISWAP_API_KEY=your_uniswap_api_key
+```
+veiltrader/
+├── ui/                      # Vite + Tailwind frontend
+│   ├── index.html
+│   ├── package.json
+│   ├── vite.config.js
+│   ├── tailwind.config.js
+│   ├── postcss.config.cjs
+│   ├── src/
+│   │   ├── main.js         # Main application
+│   │   └── style.css       # Tailwind imports
+│   └── dist/               # Built files (production)
+├── src/
+│   ├── ui/
+│   │   ├── server.js       # Static file server
+│   │   └── index.html      # Built frontend
+│   └── ...                 # Backend integration
+├── contracts/              # Smart contracts
+├── vercel.json             # Vercel config
+└── render.yaml             # Render config
 ```
 
 ---
 
-## Deployment Checklist
+## Features
 
-### Vercel (Frontend)
-- [ ] Import repository from GitHub
-- [ ] Configure framework: Other
-- [ ] Add environment variables
-- [ ] Deploy and test
-- [ ] Enable preview deployments
-- [ ] Add custom domain (optional)
+### UI Features
+- **Dashboard**: Real-time stats, price charts, portfolio allocation
+- **Trade**: Full trade execution with token selection
+- **Integrations**: View all 22 protocol connections
+- **AI Analysis**: Multi-model AI insights with confidence scores
+- **API**: REST endpoints for external integration
 
-### Render (Backend)
-- [ ] Create new web service
-- [ ] Connect GitHub repository
-- [ ] Configure build/start commands
-- [ ] Add environment variables via dashboard
-- [ ] Deploy and test
-- [ ] Verify health check endpoint
-
-### Testing
-- [ ] Open deployed URL
-- [ ] Connect MetaMask to Base Sepolia
-- [ ] Execute test trade
-- [ ] Verify on-chain transaction
-- [ ] Check all UI tabs work
+### Design System
+- **Dark theme** with glassmorphism effects
+- **Tailwind CSS** for utility-first styling
+- **Inter font** for clean typography
+- **Custom animations** for smooth interactions
 
 ---
 
@@ -281,67 +168,46 @@ UNISWAP_API_KEY=your_uniswap_api_key
 
 | Issue | Solution |
 |-------|----------|
-| Build fails | Check package.json scripts |
-| API calls fail | Verify API keys in environment |
-| Contract not found | Check VEILTRADER_CONTRACT address |
-| Web3 connection issues | Verify RPC_URL is correct |
-| Charts not loading | Check internet connection for Chart.js CDN |
-| WebSocket errors | Frontend handles fallback automatically |
+| Build fails | Ensure Node.js 18+ installed |
+| Tailwind not applying | Check content paths in tailwind.config.js |
+| Wallet not connecting | Ensure MetaMask is installed |
+| API calls failing | Verify environment variables |
+| Port in use | Kill process using port 3000 |
 
 ---
 
-## Security Notes
+## Next Steps
 
-1. **Never commit private keys** to repository
-2. Use environment variables in Vercel/Render dashboard
-3. Enable 2FA on all accounts
-4. Rotate API keys regularly
-5. Monitor usage to avoid billing surprises
-
----
-
-## Cost Estimate
-
-| Service | Tier | Cost |
-|---------|------|------|
-| Vercel (Frontend) | Hobby | Free |
-| Render (Backend API) | Starter | Free |
-| Base Sepolia (Gas) | Testnet | Free |
-| Uniswap API | Free tier | Free |
-| Google Gemini | Free tier | Free |
-| **Total** | | **$0/month** |
+1. **Deploy to Vercel** (5 minutes)
+2. **Connect wallet** and test trade execution
+3. **Record demo video** with production URL
+4. **Submit to Devfolio** with complete documentation
 
 ---
 
-## Next Steps After Deployment
+## Resources
 
-1. **Test the deployed app**
-   - Visit your Vercel URL
-   - Connect wallet
-   - Execute trades
-
-2. **Update Devfolio submission**
-   - Add deployed URL to submission
-   - Record demo with production URL
-
-3. **Monitor**
-   - Check Vercel analytics
-   - Monitor Render logs
-   - Track API usage
+- **Vercel Docs**: https://vercel.com/docs
+- **Tailwind Docs**: https://tailwindcss.com/docs
+- **Vite Docs**: https://vitejs.dev/guide/
+- **Base Sepolia**: https://docs.base.org/tools/networks
 
 ---
 
-## Support
+## Quick Start
 
-- **GitHub Issues**: https://github.com/Moses-main/VeilTrader/issues
-- **Discord**: [Add if available]
-- **Email**: [Your contact]
+```bash
+# Clone and setup
+git clone https://github.com/Moses-main/VeilTrader.git
+cd VeilTrader/ui
+npm install
 
----
+# Development
+npm run dev
 
-## References
+# Production build
+npm run build
 
-- [Vercel Documentation](https://vercel.com/docs)
-- [Render Documentation](https://render.com/docs)
-- [Base Sepolia RPC](https://docs.base.org/tools/networks#base-sepolia)
-- [Synthesis Hackathon](https://synthesis.devfolio.co)
+# Deploy to Vercel
+vercel --prod
+```
