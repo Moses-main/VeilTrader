@@ -1,0 +1,61 @@
+# Render.com Deployment Configuration
+# For backend services (if needed)
+# Note: VeilTrader is primarily a frontend + API server
+
+services:
+  # Main API Server
+  - type: web
+    name: veiltrader-api
+    env: node
+    plan: starter  # Free tier: 512MB RAM, 0.1 CPU
+    
+    # Build command
+    buildCommand: npm install
+    startCommand: node src/ui/server.js
+    
+    # Environment variables
+    envVars:
+      - key: PORT
+        value: 10000  # Render assigns port automatically
+      - key: NODE_ENV
+        value: production
+      - key: RPC_URL
+        value: https://sepolia.base.org
+      - key: CHAIN_ID
+        value: 84532
+      - key: VEILTRADER_CONTRACT
+        value: 0x0c7435e863D3a3365FEbe06F34F95f4120f71114
+      - key: ERC8004_REGISTRY
+        value: 0x8004A818BFB912233c491871b3d84c89A494BD9e
+      - key: ERC8004_REPUTATION_REGISTRY
+        value: 0x8004B663056A597Dffe9eCcC1965A193B7388713
+      - key: AGENT_NAME
+        value: Stealth
+      - key: MIN_CONFIDENCE
+        value: 0.5
+      - key: MAX_SLIPPAGE
+        value: 0.005
+      - key: MIN_PROFIT_THRESHOLD
+        value: 0.01
+      
+      # Add your API keys as Render Environment Variables
+      # through the Render dashboard for security
+      
+    # Git repository
+    repo: https://github.com/Moses-main/VeilTrader
+    branch: main
+    
+    # Health check
+    healthCheckPath: /api/status
+    healthCheckPolicy:
+      responseTimeoutSeconds: 30
+      failureThresholdCount: 3
+      failureThresholdSeconds: 60
+      successThresholdCount: 2
+      successThresholdSeconds: 30
+      
+    # Auto deploy
+    autoDeploy: true
+    
+    # Build region
+    region: oregon

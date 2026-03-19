@@ -6,7 +6,7 @@
       "use": "@vercel/node"
     },
     {
-      "src": "src/ui/**",
+      "src": "src/ui/index.html",
       "use": "@vercel/static"
     }
   ],
@@ -21,7 +21,8 @@
     }
   ],
   "env": {
-    "VEILTRADER_CONTRACT": "0x0c7435e863D3a3365FEbe06F34F95f4120f71114",
-    "RPC_URL": "https://sepolia.base.org"
-  }
+    "PORT": "3000"
+  },
+  "installCommand": "npm install",
+  "buildCommand": "npm run build:ui"
 }
