@@ -2,12 +2,11 @@
   "version": 2,
   "builds": [
     {
-      "src": "src/ui/server.js",
-      "use": "@vercel/node"
-    },
-    {
-      "src": "src/ui/index.html",
-      "use": "@vercel/static"
+      "src": "ui/package.json",
+      "use": "@vercel/static-build",
+      "config": {
+        "distDir": "dist"
+      }
     }
   ],
   "routes": [
@@ -17,12 +16,12 @@
     },
     {
       "src": "/(.*)",
-      "dest": "/src/ui/$1"
+      "dest": "/ui/$1"
     }
   ],
   "env": {
     "PORT": "3000"
   },
-  "installCommand": "npm install",
-  "buildCommand": "npm run build:ui"
+  "installCommand": "cd ui && npm install",
+  "buildCommand": "cd ui && npm run build"
 }
